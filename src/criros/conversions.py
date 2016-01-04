@@ -2,6 +2,9 @@
 import rospy
 import PyKDL
 import numpy as np
+import tf.transformations as tr
+# Messages
+from geometry_msgs.msg import Point, Quaternion, Pose
 
 
 # PyKDL types <--> Numpy types
@@ -42,6 +45,30 @@ def from_point(msg):
   @return: The resulting numpy array
   """
   return np.array([msg.x, msg.y, msg.z])
+
+def from_pose(msg):
+  """
+  Converts a C{geometry_msgs/Pose} ROS message into a numpy array (Homogeneous transformation 4x4).
+  
+  @type msg: geometry_msgs/Pose
+  @param msg: The ROS message to be converted
+  @rtype: array
+  @return: The resulting numpy array
+  """
+  T = tr.quaternion_matrix(from_quaternion(msg.orientation))
+  T[:3,3] = from_point(msg.position)
+  return T
+
+def from_quaternion(msg):
+  """
+  Converts a C{geometry_msgs/Quaternion} ROS message into a numpy array.
+  
+  @type msg: geometry_msgs/Quaternion
+  @param msg: The ROS message to be converted
+  @rtype: array
+  @return: The resulting numpy array
+  """
+  return np.array([msg.x, msg.y, msg.z, msg.w])
   
 def from_vector3(msg):
   """
@@ -67,3 +94,28 @@ def from_wrench(msg):
   array[:3] = from_vector3(msg.force)
   array[3:] = from_vector3(msg.torque)
   return array
+
+def to_point(array):
+  """
+  Converts a numpy array into a C{geometry_msgs/Point} ROS message.
+  
+  @type T: array
+  @param T: The position as numpy array
+  @rtype: geometry_msgs/Point
+  @return: The resulting ROS message
+  """
+  return Point(*array)
+
+
+def to_pose(T):
+  """
+  Converts a homogeneous transformation (4x4) into a C{geometry_msgs/Pose} ROS message.
+  
+  @type T: array
+  @param T: The homogeneous transformation
+  @rtype: geometry_msgs/Pose
+  @return: The resulting ROS message
+  """
+  pos = Point(*T[:3,3])
+  quat = Quaternion(*tr.quaternion_from_matrix(T))
+  return Pose(pos,quat)
