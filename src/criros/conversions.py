@@ -119,3 +119,19 @@ def to_pose(T):
   pos = Point(*T[:3,3])
   quat = Quaternion(*tr.quaternion_from_matrix(T))
   return Pose(pos,quat)
+
+
+# RViz types <--> Numpy types
+def from_rviz_vector(value, maptype=float):
+  """
+  Converts a RViz property vector in the form C{X;Y;Z} into a numpy array.
+  
+  @type value: str
+  @param value: The RViz property vector
+  @type maptype: type
+  @param maptype: The type of mapping to be done. Typically C{float} or C{int}.
+  @rtype: array
+  @return: The resulting numpy array
+  """
+  strlst = value.split(';')
+  return np.array( map(maptype, strlst) )
