@@ -8,11 +8,49 @@ X_AXIS = np.array([1, 0, 0])
 Y_AXIS = np.array([0, 1, 0])
 Z_AXIS = np.array([0, 0, 1])
 
-def fit_plane_svd(A):
-  u,s,vh = np.linalg.svd(A)
-  v = vh.conj().transpose()
-  normal = v[:,-1]
-  return normal
+def fit_plane_lstsq(XYZ):
+    # Fits a plane to a point cloud, 
+    # Where Z = aX + bY + c        ----Eqn #1
+    # Rearanging Eqn1: aX + bY -Z +c =0
+    # Gives normal (a,b,-1)
+    # Normal = (a,b,-1)
+    [rows,cols] = XYZ.shape
+    G = np.ones((rows,3))
+    G[:,0] = XYZ[:,0]  #X
+    G[:,1] = XYZ[:,1]  #Y
+    Z = XYZ[:,2]
+    (a,b,c),resid,rank,s = np.linalg.lstsq(G,Z) 
+    normal = (a,b,-1)
+    nn = np.linalg.norm(normal)
+    normal = normal / nn
+    return normal
+
+def fit_plane_solve(XYZ):
+    X = XYZ[:,0]
+    Y = XYZ[:,1]
+    Z = XYZ[:,2] 
+    npts = len(X)
+    A = np.array([ [sum(X*X), sum(X*Y), sum(X)],
+                   [sum(X*Y), sum(Y*Y), sum(Y)],
+                   [sum(X),   sum(Y), npts] ])
+    B = np.array([ [sum(X*Z), sum(Y*Z), sum(Z)] ])
+    normal = np.linalg.solve(A,B.T)
+    nn = np.linalg.norm(normal)
+    normal = normal / nn
+    return normal.ravel()
+
+def fit_plane_svd(XYZ):
+    [rows,cols] = XYZ.shape
+    # Set up constraint equations of the form  AB = 0,
+    # where B is a column vector of the plane coefficients
+    # in the form b(1)*X + b(2)*Y +b(3)*Z + b(4) = 0.
+    p = (np.ones((rows,1)))
+    AB = np.hstack([XYZ,p])
+    [u, d, v] = np.linalg.svd(AB,0)
+    B = v[3,:];                    # Solution is last column of v.
+    nn = np.linalg.norm(B[0:3])
+    B = B / nn
+    return B[0:3]
 
 def force_frame_transform(bTa):
   """
