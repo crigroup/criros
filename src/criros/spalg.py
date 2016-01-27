@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import rospy
+import scipy.optimize
 import numpy as np
 from math import sqrt
 import tf.transformations as tr
@@ -24,6 +25,26 @@ def fit_plane_lstsq(XYZ):
     nn = np.linalg.norm(normal)
     normal = normal / nn
     return normal
+
+def fit_plane_optimize(points):
+  def f_min(X,p):
+    normal = p[0:3]
+    d = p[3]
+    result = ((normal*X.T).sum(axis=1) + d) / np.linalg.norm(normal) 
+    return result
+  
+  def residuals(params, signal, X):
+    return f_min(X, params)
+  
+  XYZ = np.array(points).T
+  p0 = np.array([1,1,1,1])
+  sol = scipy.optimize.leastsq(residuals, p0, args=(None, XYZ))[0]
+  nn = np.linalg.norm(sol[:3])
+  sol /= nn
+  print "Solution: ", sol
+  print "Old Error: ", (f_min(XYZ, p0)**2).sum()
+  print "New Error: ", (f_min(XYZ, sol)**2).sum()
+  return sol
 
 def fit_plane_solve(XYZ):
     X = XYZ[:,0]
