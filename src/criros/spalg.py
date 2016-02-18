@@ -41,9 +41,9 @@ def fit_plane_optimize(points):
   sol = scipy.optimize.leastsq(residuals, p0, args=(None, XYZ))[0]
   nn = np.linalg.norm(sol[:3])
   sol /= nn
-  print "Solution: ", sol
-  print "Old Error: ", (f_min(XYZ, p0)**2).sum()
-  print "New Error: ", (f_min(XYZ, sol)**2).sum()
+  rospy.logdebug( 'Solution: ', sol )
+  rospy.logdebug( 'Old Error: ', (f_min(XYZ, p0)**2).sum() )
+  rospy.logdebug( 'New Error: ', (f_min(XYZ, sol)**2).sum() )
   return sol
 
 def fit_plane_solve(XYZ):
@@ -159,26 +159,19 @@ def perpendicular_vector(v):
     return Y_AXIS
   return np.array([-v[1], v[0], 0])
 
-def rotation_matrix_from_axes(angle, newaxis, oldaxis=Z_AXIS):
+def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
   """
-  Return the rotation matrix that align two vectors.
+  Return the rotation matrix that aligns two vectors.
   """
   oldaxis = tr.unit_vector(oldaxis)
   newaxis = tr.unit_vector(newaxis)
   c = np.dot(oldaxis, newaxis)
-  if np.isclose(c, -1.0):
+  angle = np.arccos(c)
+  if np.isclose(c, -1.0) or np.allclose(newaxis, oldaxis):
     v = perpendicular_vector(newaxis)
-    s = 0.0
   else:
     v = np.cross(oldaxis, newaxis)
-    s = np.linalg.norm(v)
-  I = np.eye(3)
-  K = skew(v)
-  R = I + s*K + (1-c)*np.linalg.matrix_power(K,2)
-  R_angle = tr.rotation_matrix(angle, oldaxis)
-  M = np.eye(4)
-  M[:3,:3] = np.dot(R, R_angle[:3,:3])
-  return M
+  return tr.rotation_matrix(angle, v)
 
 def skew(v):
   """
@@ -233,6 +226,20 @@ def transformation_estimation_svd(A, B):
      R = np.dot(Vt.T, U.T)
   t = -np.dot(R, centroid_A.T) + centroid_B.T
   return R, t
+
+def transformation_between_planes(newplane, oldplane):
+  """
+  Returns the transformation matrix that aligns two planes.
+  """
+  newaxis = np.array(newplane[:3])
+  Rnew = rotation_matrix_from_axes(newaxis, Z_AXIS)[:3,:3]
+  newpoint = np.dot(Rnew, np.array([0,0,newplane[3]]))
+  oldaxis = np.array(oldplane[:3])
+  Rold = rotation_matrix_from_axes(oldaxis, Z_AXIS)[:3,:3]
+  oldpoint = np.dot(Rold, np.array([0,0,oldplane[3]]))
+  T = rotation_matrix_from_axes(newaxis, oldaxis)
+  T[:3,3] = -newpoint + np.dot(T[:3,:3], oldpoint)
+  return T
 
 def transform_inv(T):
   """
