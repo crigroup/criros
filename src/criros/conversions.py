@@ -4,7 +4,7 @@ import PyKDL
 import numpy as np
 import tf.transformations as tr
 # Messages
-from geometry_msgs.msg import Point, Quaternion, Pose
+from geometry_msgs.msg import Point, Quaternion, Pose, Vector3
 
 
 # PyKDL types <--> Numpy types
@@ -120,6 +120,17 @@ def to_pose(T):
   quat = Quaternion(*tr.quaternion_from_matrix(T))
   return Pose(pos,quat)
 
+
+def to_vector3(array):
+  """
+  Converts a numpy array into a C{geometry_msgs/Vector3} ROS message.
+  
+  @type T: array
+  @param T: The vector as numpy array
+  @rtype: geometry_msgs/Vector3
+  @return: The resulting ROS message
+  """
+  return Vector3(*array)
 
 # RViz types <--> Numpy types
 def from_rviz_vector(value, maptype=float):
