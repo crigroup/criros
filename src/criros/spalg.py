@@ -10,21 +10,21 @@ Y_AXIS = np.array([0, 1, 0])
 Z_AXIS = np.array([0, 0, 1])
 
 def fit_plane_lstsq(XYZ):
-    # Fits a plane to a point cloud, 
-    # Where Z = aX + bY + c        ----Eqn #1
-    # Rearanging Eqn1: aX + bY -Z +c =0
-    # Gives normal (a,b,-1)
-    # Normal = (a,b,-1)
-    [rows,cols] = XYZ.shape
-    G = np.ones((rows,3))
-    G[:,0] = XYZ[:,0]  #X
-    G[:,1] = XYZ[:,1]  #Y
-    Z = XYZ[:,2]
-    (a,b,c),resid,rank,s = np.linalg.lstsq(G,Z) 
-    normal = (a,b,-1)
-    nn = np.linalg.norm(normal)
-    normal = normal / nn
-    return normal
+  # Fits a plane to a point cloud, 
+  # Where Z = aX + bY + c (1)
+  # Rearanging (1): aX + bY -Z +c =0
+  # Gives normal (a,b,-1)
+  # Normal = (a,b,-1)
+  [rows,cols] = XYZ.shape
+  G = np.ones((rows,3))
+  G[:,0] = XYZ[:,0]  #X
+  G[:,1] = XYZ[:,1]  #Y
+  Z = XYZ[:,2]
+  (a,b,c),resid,rank,s = np.linalg.lstsq(G,Z) 
+  normal = (a,b,-1)
+  nn = np.linalg.norm(normal)
+  normal = normal / nn
+  return normal
 
 def fit_plane_optimize(points):
   def f_min(X,p):
