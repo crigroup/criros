@@ -148,7 +148,7 @@ def to_pose(T):
   """
   pos = Point(*T[:3,3])
   quat = Quaternion(*tr.quaternion_from_matrix(T))
-  return Pose(pos,quat)
+  return Pose(pos, quat)
 
 
 def to_vector3(array):
