@@ -1,7 +1,23 @@
 #! /usr/bin/env python
 import criros
+import itertools
 import numpy as np
 import openravepy as orpy
+
+
+def compute_bounding_box_corners(body, Tbody=None, scale=1.0):
+  # Create a dummy body an use OpenRAVE to get the corners
+  env = body.GetEnv()
+  dummy = orpy.RaveCreateKinBody(env, '')
+  dummy.Clone(body, 0)
+  if Tbody is not None:
+    with env:
+      dummy.SetTransform(Tbody)
+  aabb = dummy.ComputeAABB()
+  corners = []
+  for k in itertools.product([-1,1],[-1,1],[-1,1]):
+    corners.append(aabb.pos() + np.array(k)*aabb.extents()*scale)
+  return corners
 
 def remove_objects(env, objects):
   for name in objects:
