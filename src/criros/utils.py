@@ -71,6 +71,8 @@ def clean_cos(value):
   return min(1,max(value,-1))
 
 def has_keys(data, keys):
+  if not isinstance(data, dict):
+    return False
   has_all = True
   for key in keys:
     if key not in data:
