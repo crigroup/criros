@@ -4,6 +4,9 @@ import itertools
 import numpy as np
 import openravepy as orpy
 
+# Convenient variables
+iktype5D = orpy.IkParameterization.Type.TranslationDirection5D
+iktype6D = orpy.IkParameterization.Type.Transform6D
 
 def compute_bounding_box_corners(body, Tbody=None, scale=1.0):
   # Create a dummy body an use OpenRAVE to get the corners
@@ -36,3 +39,8 @@ def move_origin_to_body(refbody):
         continue
       Tbody = body.GetTransform()
       body.SetTransform( np.dot(Tbody, Toffset) )
+
+def set_body_transparency(body, transparency):
+  for link in body.GetLinks():
+    for geom in link.GetGeometries():
+      geom.SetTransparency(transparency)
