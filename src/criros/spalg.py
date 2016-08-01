@@ -10,11 +10,14 @@ Y_AXIS = np.array([0, 1, 0])
 Z_AXIS = np.array([0, 0, 1])
 
 def fit_plane_lstsq(XYZ):
-  # Fits a plane to a point cloud, 
-  # Where Z = aX + bY + c (1)
-  # Rearanging (1): aX + bY -Z +c =0
-  # Gives normal (a,b,-1)
-  # Normal = (a,b,-1)
+  """
+  Fits a plane to a point cloud.
+  Where z=a.x+b.y+c; Rearranging: a.x+b.y-z+c=0
+  @type  XYZ: list
+  @param XYZ: list of points
+  @rtype: np.array
+  @return: normalized normal vector of the plane in the form C{(a,b,-1)}
+  """
   [rows,cols] = XYZ.shape
   G = np.ones((rows,3))
   G[:,0] = XYZ[:,0]  #X
@@ -27,6 +30,13 @@ def fit_plane_lstsq(XYZ):
   return normal
 
 def fit_plane_optimize(points):
+  """
+  Fits a plane to a point cloud using C{scipy.optimize.leastsq}
+  @type  points: list
+  @param points: list of points
+  @rtype: np.array
+  @return: normalized normal vector of the plane
+  """
   def f_min(X,p):
     normal = p[0:3]
     d = p[3]
@@ -47,39 +57,51 @@ def fit_plane_optimize(points):
   return sol
 
 def fit_plane_solve(XYZ):
-    X = XYZ[:,0]
-    Y = XYZ[:,1]
-    Z = XYZ[:,2] 
-    npts = len(X)
-    A = np.array([ [sum(X*X), sum(X*Y), sum(X)],
-                   [sum(X*Y), sum(Y*Y), sum(Y)],
-                   [sum(X),   sum(Y), npts] ])
-    B = np.array([ [sum(X*Z), sum(Y*Z), sum(Z)] ])
-    normal = np.linalg.solve(A,B.T)
-    nn = np.linalg.norm(normal)
-    normal = normal / nn
-    return normal.ravel()
+  """
+  Fits a plane to a point cloud using C{np.linalg.solve}
+  @type  XYZ: list
+  @param XYZ: list of points
+  @rtype: np.array
+  @return: normalized normal vector of the plane
+  """
+  X = XYZ[:,0]
+  Y = XYZ[:,1]
+  Z = XYZ[:,2] 
+  npts = len(X)
+  A = np.array([ [sum(X*X), sum(X*Y), sum(X)],
+                 [sum(X*Y), sum(Y*Y), sum(Y)],
+                 [sum(X),   sum(Y), npts] ])
+  B = np.array([ [sum(X*Z), sum(Y*Z), sum(Z)] ])
+  normal = np.linalg.solve(A,B.T)
+  nn = np.linalg.norm(normal)
+  normal = normal / nn
+  return normal.ravel()
 
 def fit_plane_svd(XYZ):
-    [rows,cols] = XYZ.shape
-    # Set up constraint equations of the form  AB = 0,
-    # where B is a column vector of the plane coefficients
-    # in the form b(1)*X + b(2)*Y +b(3)*Z + b(4) = 0.
-    p = (np.ones((rows,1)))
-    AB = np.hstack([XYZ,p])
-    [u, d, v] = np.linalg.svd(AB,0)
-    B = v[3,:];                    # Solution is last column of v.
-    nn = np.linalg.norm(B[0:3])
-    B = B / nn
-    return B[0:3]
+  """
+  Fits a plane to a point cloud using C{np.linalg.svd}
+  @type  XYZ: list
+  @param XYZ: list of points
+  @rtype: np.array
+  @return: normalized normal vector of the plane
+  """
+  [rows,cols] = XYZ.shape
+  # Set up constraint equations of the form  AB = 0,
+  # where B is a column vector of the plane coefficients
+  # in the form b(1)*X + b(2)*Y +b(3)*Z + b(4) = 0.
+  p = (np.ones((rows,1)))
+  AB = np.hstack([XYZ,p])
+  [u, d, v] = np.linalg.svd(AB,0)
+  B = v[3,:];                    # Solution is last column of v.
+  nn = np.linalg.norm(B[0:3])
+  B = B / nn
+  return B[0:3]
 
 def force_frame_transform(bTa):
   """
   Calculates the coordinate transformation for force vectors.
-  
   The force vectors obey special transformation rules.
   B{Reference:} Handbook of robotics page 39, equation 2.9
-  
   @type bTa: array, shape (4,4)
   @param bTa: Homogeneous transformation that represents the position 
   and orientation of frame M{A} relative to frame M{B}
@@ -93,7 +115,6 @@ def force_frame_transform(bTa):
 def inertia_matrix_from_vector(i):
   """
   Returns the inertia matrix from its vectorized form.
-  
   @type i: array, shape (6,1)
   @param i: The inertia parameters in its vectorized form.
   @rtype: array, shape (3,3)
@@ -112,7 +133,6 @@ def inertia_matrix_from_vector(i):
 def L_matrix(w):
   """
   Returns the 3x6 matrix of angular velocity elements.
-  
   @type w: array
   @param w: The angular velocity array
   @rtype: array, shape (3,6)
@@ -127,10 +147,8 @@ def L_matrix(w):
 def motion_frame_transform(bTa):
   """
   Calculates the coordinate transformation for motion vectors.
-  
   The motion vectors obey special transformation rules.
   B{Reference:} Handbook of robotics page 39, equation 2.9
-  
   @type bTa: array, shape (4,4)
   @param bTa: Homogeneous transformation that represents the position 
   and orientation of frame M{A} relative to frame M{B}
@@ -149,6 +167,10 @@ def motion_frame_transform(bTa):
 def perpendicular_vector(v):
   """
   Finds an arbitrary perpendicular vector to B{v}
+  @type  v: np.array
+  @param v: The input vector
+  @rtype: np.array
+  @return: The perpendicular vector.
   """
   v = tr.unit_vector(v)
   if np.allclose(v[:2], np.zeros(2)):
@@ -161,7 +183,13 @@ def perpendicular_vector(v):
 
 def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
   """
-  Return the rotation matrix that aligns two vectors.
+  Returns the rotation matrix that aligns two vectors.
+  @type  newaxis: np.array
+  @param newaxis: The goal axis
+  @type  oldaxis: np.array
+  @param oldaxis: The initial axis
+  @rtype: array, shape (3,3)
+  @return: The resulting rotation matrix that aligns the old to the new axis.
   """
   oldaxis = tr.unit_vector(oldaxis)
   newaxis = tr.unit_vector(newaxis)
@@ -176,10 +204,8 @@ def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
 def skew(v):
   """
   Returns the 3x3 skew matrix.
-  
   The skew matrix is a square matrix M{A} whose transpose is also its 
   negative; that is, it satisfies the condition M{-A = A^T}.
-  
   @type v: array
   @param v: The input array
   @rtype: array, shape (3,3)
@@ -192,14 +218,11 @@ def transformation_estimation_svd(A, B):
   """
   This method implements SVD-based estimation of the transformation 
   aligning the given correspondences.
-  
   Estimate a rigid transformation between a source and a target matrices 
   using SVD.
-  
   For further information please check: 
     - U{http://dx.doi.org/10.1109/TPAMI.1987.4767965}
     - U{http://nghiaho.com/?page_id=671}
-  
   @type A: numpy.array
   @param A: Points expressed in the reference frame A
   @type B: numpy.array
@@ -230,6 +253,12 @@ def transformation_estimation_svd(A, B):
 def transformation_between_planes(newplane, oldplane):
   """
   Returns the transformation matrix that aligns two planes.
+  @type  newplane: np.array
+  @param newplane: The goal plane in the form [a,b,c,d] where a.x+b.y+c.z+d=0
+  @type  oldplane: np.array
+  @param oldplane: The initial plane in the form [a,b,c,d] where a.x+b.y+c.z+d=0
+  @rtype: np.array, shape (4,4)
+  @return: The resulting homogeneous transformation that converts C{oldplane} to C{newplane}.
   """
   newaxis = np.array(newplane[:3])
   Rnew = rotation_matrix_from_axes(newaxis, Z_AXIS)[:3,:3]
@@ -247,7 +276,6 @@ def transform_inv(T):
   
   This method is more efficient than using C{numpy.linalg.inv}, given 
   the special properties of the homogeneous transformations.
-  
   @type T: array, shape (4,4)
   @param T: The input homogeneous transformation
   @rtype: array, shape (4,4)
