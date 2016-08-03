@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+import numpy as np
 import rospy, sys, inspect
 
 
@@ -225,18 +226,18 @@ def read_parameter_err(name):
       has_param = False
   return has_param, rospy.get_param(name, None)
 
-def unique(a):
+def unique(data):
   """
   Finds the unique elements of an array. B{row-wise} and 
   returns the sorted unique elements of an array.
-  @type a: numpy.array
-  @param a: Input array.
-  @rtype: numpy.array
+  @type  data: np.array
+  @param data: Input array.
+  @rtype: np.array
   @return: The sorted unique array.
   """
-  order = np.lexsort(a.T)
-  a = a[order]
-  diff = np.diff(a, axis=0)
-  ui = np.ones(len(a), 'bool')
+  order = np.lexsort(data.T)
+  data = data[order]
+  diff = np.diff(data, axis=0)
+  ui = np.ones(len(data), 'bool')
   ui[1:] = (diff != 0).any(axis=1) 
-  return a[ui]
+  return data[ui]
