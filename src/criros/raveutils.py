@@ -306,10 +306,10 @@ def move_origin_to_body(refbody):
   with env:
     for body in env.GetBodies():
       # Dont move Grabbed bodies. They will move once we move the robot grabbing them.
-      if body.GetName in grabbed_names:
+      if body.GetName() in grabbed_names:
         continue
       Tbody = body.GetTransform()
-      body.SetTransform( np.dot(Tbody, Toffset) )
+      body.SetTransform( np.dot(Toffset, Tbody) )
 
 def set_body_transparency(body, transparency=0.0):
   """
