@@ -5,6 +5,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
 )
 
+find_package(openrave REQUIRED)
+
 catkin_python_setup()
 
 catkin_package()

@@ -14,9 +14,10 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>rospy</build_depend>
 
-  <run_depend>rospy</run_depend>
-  <run_depend>openrave_catkin</run_depend>
+  <run_depend>image_geometry</run_depend>
   <run_depend>python_orocos_kdl</run_depend>
   <run_depend>python-tabulate</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>tf</run_depend>
 
 </package>
