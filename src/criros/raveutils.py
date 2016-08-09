@@ -311,6 +311,19 @@ def move_origin_to_body(refbody):
       Tbody = body.GetTransform()
       body.SetTransform( np.dot(Toffset, Tbody) )
 
+def random_joint_positions(robot):
+  """
+  Generates random joint positions within joint limits for the given robot.
+  @type  robot: orpy.Robot
+  @param robot: The OpenRAVE robot
+  @rtype: np.array
+  @return: 
+  """
+  # Get the limits of the active DOFs
+  lower, upper = robot.GetActiveDOFLimits()
+  positions = lower + np.random.rand(len(lower))*(upper-lower)
+  return positions
+
 def set_body_transparency(body, transparency=0.0):
   """
   Sets the transparency value of a body recursively.
