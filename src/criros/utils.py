@@ -217,7 +217,7 @@ def read_parameter_err(name):
   """
   if rospy.is_shutdown():
     logger = TextColors()
-    logger.logwarn('roscore not found, parameter [%s] using default: %s' % (name, default))
+    logger.logerr('roscore not found')
     has_param = False
   else:
     has_param = True
