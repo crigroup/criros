@@ -265,34 +265,47 @@ def compute_bounding_box_corners(body, Tbody=None, scale=1.0):
     corners.append(aabb.pos() + np.array(k)*aabb.extents()*scale)
   return corners
 
-def remove_bodies(env, remove=None, keep=None):
+def environment_from_dict(config, env=None, logger=TextColors()):
   """
-  Removes the specified bodies from the OpenRAVE environment.
-  You can specify the bodies to be removed or kept.
-  @type  env: orpy.Environment
-  @param env: The OpenRAVE environment
-  @type  remove: list
-  @param remove: list of objects to remove
-  @type  keep: list
-  @param keep: list of objects to keep 
+  Loads and configures and OpenRAVE environment from a configuration dictionary.
+  This approach allows to encapsulate additional information that would be tedious
+  to include if we only used the OpenRAVE XML specification.
+  @type  config: dict
+  @param config: The configuration dictionary
+  @rtype: orpy.Environment
+  @return: The OpenRAVE environment loaded
   """
-  # Check that one of the lists is None
-  if (remove is None) and (type(keep) is list):
-    case = 1
-  elif (keep is None) and (type(remove) is list):
-    case = 2
-  else:
-    return
-  for body in env.GetBodies():
-    remove_body = False
-    name = body.GetName()
-    if case == 1:
-      remove_body = name not in keep
-    if case == 2:
-      remove_body = name in remove
-    if remove_body:
-      with env:
-        env.Remove(body)
+  if not isinstance(config, dict):
+    logger.logwarn('config is not a dict')
+    return None
+  # Check required fields are in the config dict
+  required_fields = ['world']
+  if not criros.utils.has_keys(config, required_fields):
+    logger.logwarn( 'config dict does not have the required fields: {0}'.format(required_fields) )
+    return None
+  if env is None:
+    env = orpy.Environment()
+  if not env.Load(config['world']):
+    env = None
+    return None
+  # Process OPTIONAL parameters
+  # Viewer parameters
+  if config.has_key('viewer'):
+    viewer_name = config['viewer']['name']
+    if viewer_name == 'default':
+      env.SetDefaultViewer()
+    else:
+      env.SetViewer(viewer_name)
+    # The camera where we look the viewer from
+    transform_dict = config['viewer']['camera']
+    camera_fields = ['rotation','translation']
+    if not criros.utils.has_keys(transform_dict, camera_fields):
+      logger.logwarn('camera dict does not have the required fields: {0}'.format(camera_fields))
+    elif env.GetViewer() is not None:
+      Tcam = criros.conversions.from_dict(transform_dict)
+      env.GetViewer().SetCamera(Tcam)
+  # Return configure environment
+  return env
 
 def move_origin_to_body(refbody):
   """
@@ -323,6 +336,35 @@ def random_joint_positions(robot):
   lower, upper = robot.GetActiveDOFLimits()
   positions = lower + np.random.rand(len(lower))*(upper-lower)
   return positions
+
+def remove_bodies(env, remove=None, keep=None):
+  """
+  Removes the specified bodies from the OpenRAVE environment.
+  You can specify the bodies to be removed or kept.
+  @type  env: orpy.Environment
+  @param env: The OpenRAVE environment
+  @type  remove: list
+  @param remove: list of objects to remove
+  @type  keep: list
+  @param keep: list of objects to keep 
+  """
+  # Check that one of the lists is None
+  if (remove is None) and (type(keep) is list):
+    case = 1
+  elif (keep is None) and (type(remove) is list):
+    case = 2
+  else:
+    return
+  for body in env.GetBodies():
+    remove_body = False
+    name = body.GetName()
+    if case == 1:
+      remove_body = name not in keep
+    if case == 2:
+      remove_body = name in remove
+    if remove_body:
+      with env:
+        env.Remove(body)
 
 def set_body_transparency(body, transparency=0.0):
   """
