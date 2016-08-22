@@ -18,9 +18,10 @@ from criros.utils import TextColors
 import tabulate
 from std_msgs.msg import String
 
-# Convenient variables
+# Supported IK types
 iktype5D = orpy.IkParameterization.Type.TranslationDirection5D
 iktype6D = orpy.IkParameterization.Type.Transform6D
+SUPPORTED_IK_TYPES = [iktype5D, iktype6D]
 
 class RaveStateUpdater():
   """
@@ -306,6 +307,25 @@ def environment_from_dict(config, env=None, logger=TextColors()):
       env.GetViewer().SetCamera(Tcam)
   # Return configure environment
   return env
+
+def get_robot_iktypes(robot):
+  """
+  Returns a dict with the manipulator:iktype pair that there is a iksolver available. 
+  @type  refbody: orpy.Robot
+  @param refbody: The OpenRAVE robot
+  @rtype: orpy.Environment
+  @return: The dict with the manipname:[iktypes] pairs.
+  """
+  robot_iktypes = dict()
+  for manip in robot.GetManipulators():
+    iktypes = []
+    for iktype in SUPPORTED_IK_TYPES:
+      ikmodel = orpy.databases.inversekinematics.InverseKinematicsModel(iktype=iktype, manip=manip)
+      if ikmodel.load():
+        iktypes.append(iktype)
+    if iktypes:
+      robot_iktypes[manip.GetName()] = list(iktypes)
+  return robot_iktypes
 
 def move_origin_to_body(refbody):
   """

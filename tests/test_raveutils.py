@@ -11,7 +11,8 @@ class TestraveutilsModule(unittest.TestCase):
   def setUp(self):
     np.set_printoptions(precision=6, suppress=True)
     self.env = orpy.Environment()
-    self.env.Load('data/lab1.env.xml')
+    if not self.env.Load('data/lab1.env.xml'):
+      raise Exception('Could not load scene: data/lab1.env.xml')
     print('') # dummy line
   
   def tearDown(self):
@@ -74,6 +75,12 @@ class TestraveutilsModule(unittest.TestCase):
     Texpected = criros.conversions.from_dict(config['viewer']['camera'])
     Tcamviewer = viewer.GetCameraTransform()
     np.testing.assert_allclose(Texpected, Tcamviewer, atol=1e-5)
+  
+  def test_get_robot_iktypes(self):
+    env = self.env
+    robot = env.GetRobot('BarrettWAM')
+    iktypes = criros.raveutils.get_robot_iktypes(robot)
+    self.assertEqual({'arm':[criros.raveutils.iktype6D]}, iktypes)
   
   def test_move_origin_to_body(self):
     env = self.env

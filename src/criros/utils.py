@@ -193,7 +193,7 @@ def read_parameter(name, default):
   @type  default: Object
   @param default: Default value for the parameter. The type should be 
   the same as the one expected for the parameter.
-  @rtype: Object
+  @rtype: any
   @return: The resulting parameter
   """
   if rospy.is_shutdown():
@@ -225,6 +225,25 @@ def read_parameter_err(name):
       rospy.logerr("Parameter [%s] not found" % (name))
       has_param = False
   return has_param, rospy.get_param(name, None)
+
+def read_parameter_fatal(name):
+  """
+  Get a parameter from the ROS parameter server. If it's not found, an
+  exception will be raised.
+  @type name: string
+  @param name: Parameter name
+  @rtype: any
+  @return: The resulting parameter
+  """
+  if rospy.is_shutdown():
+    logger = TextColors()
+    logger.logfatal('roscore not found')
+    raise Exception( 'Required parameter {0} not found'.format(name) )
+  else:
+    if not rospy.has_param(name):
+      rospy.logfatal("Parameter [%s] not found" % (name))
+      raise Exception( 'Required parameter {0} not found'.format(name) )
+  return rospy.get_param(name, None)
 
 def unique(data):
   """
