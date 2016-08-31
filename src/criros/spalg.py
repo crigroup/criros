@@ -9,6 +9,24 @@ X_AXIS = np.array([1, 0, 0])
 Y_AXIS = np.array([0, 1, 0])
 Z_AXIS = np.array([0, 0, 1])
 
+class Plane(object):
+  """Represents a plane defined by a normal vector through the given point."""
+  def __init__(self, normal, point):
+      self.point = np.array(point)
+      self.normal = tr.unit_vector(normal)
+      self.offset = -np.dot(self.normal, self.point)
+  
+  @property
+  def coeffs(self):
+    return np.hstack((self.normal, self.offset))
+  
+  def distance(self, p):
+    """
+    Calculate distance from a point p to the plane.
+    """
+    dist = np.dot(self.normal, p) + self.offset
+    return dist
+
 def fit_plane_lstsq(XYZ):
   """
   Fits a plane to a point cloud.
