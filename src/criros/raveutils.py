@@ -132,19 +132,26 @@ class RaveStateUpdater():
     @rtype: orpy.KinBody
     @return: Reference to the body in OpenRAVE
     """
-    # Remove slashes found at the beggining of the frame_id
+    # Remove slashes found at the beginning of the frame_id
     if frame_id[0] == '/':
       frame_id = frame_id[1:]
     ref_body = None
+    possible_count = 0
     for possible_name in frame_id.split('/'):
       for body in self.env.GetBodies():
         body_name = body.GetName()
-        if (body_name in possible_name) or (possible_name in body_name):
+        if body_name == possible_name:
+          return body
+        elif (body_name in possible_name) or (possible_name in body_name):
           ref_body = body
-          break
-      if ref_body is not None:
-        break
+          possible_count += 1
+    if possible_count != 1:
+      ref_body = None
     return ref_body
+  
+  @property
+  def robots_with_joint_states(self):
+    return list(self.js_robots)
   
   def stop(self):
     """
@@ -166,10 +173,12 @@ class RaveStateUpdater():
     # Variables used to report the updated states
     updated_bodies = []
     updated_robots = []
+    blacklist = []
     # Added the fixed frame
     ref_body = self._find_rave_body(self.fixed_frame)
     if ref_body is not None:
       updated_bodies.append( [ref_body.GetName(), self.fixed_frame, '* Fixed frame'] )
+      blacklist.append(ref_body.GetName())
     # Get available names in TF excluding the fixed_frame
     tf_names = []
     for frame_id in self.listener.getFrameStrings():
@@ -186,7 +195,7 @@ class RaveStateUpdater():
     timeout = self.rate / (float(len(tf_names))+1)
     for frame_id in tf_names:
       body = self._find_rave_body(frame_id)
-      if body is None:
+      if (body is None) or (body.GetName() in blacklist):
         continue
       try:
         # Access the latest available transforms in the TF tree,
@@ -199,6 +208,7 @@ class RaveStateUpdater():
         with self.env:
           body.SetTransform(T)
         updated_bodies.append([body.GetName(), frame_id, ''])
+        blacklist.append(body.GetName())
       except:
         pass
     # Update the joint values of the OpenRAVE robots
