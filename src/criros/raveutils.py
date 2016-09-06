@@ -59,8 +59,8 @@ class RaveStateUpdater():
     except rospy.ROSInitException:
       logger.logerr('time is not initialized. Have you called rospy.init_node()?')
       return
-    # Wait a little bit until we hear something from tf
-    rospy.sleep(1.0)
+    # TODO: Wait until we hear something from TF
+    rospy.sleep(5.0)
     # Subscribe to the joint_states topics that match a robot in OpenRAVE
     topics = rosgraph.Master('/rostopic').getPublishedTopics('/')
     self.js_topics = []
@@ -153,6 +153,25 @@ class RaveStateUpdater():
   def robots_with_joint_states(self):
     return list(self.js_robots)
   
+  def get_transform_from_tf(self, parent, child):
+    """
+    Gets the transformation of the C{child} frame w.r.t the C{parent} frame from TF.
+    @type  parent: string
+    @param parent: The parent frame in the TF tree
+    @type  child: string
+    @param child: The child frame in the TF tree
+    @rtype: np.array
+    @return: The transformation of the C{child} w.r.t the C{parent} frame. C{None} if failed.
+    """
+    try:
+      # Access the latest available transforms in the TF tree,
+      (pos,rot) = self.listener.lookupTransform(parent, child, rospy.Time(0))
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+      return None
+    T = tr.quaternion_matrix(rot)
+    T[:3,3] = pos
+    return T
+  
   def stop(self):
     """
     If the update thread is running, stops it.
@@ -197,14 +216,10 @@ class RaveStateUpdater():
       body = self._find_rave_body(frame_id)
       if (body is None) or (body.GetName() in blacklist):
         continue
-      try:
-        # Access the latest available transforms in the TF tree,
-        (pos,rot) = self.listener.lookupTransform(self.fixed_frame, frame_id, rospy.Time(0))
-      except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+      T = self.get_transform_from_tf(parent=self.fixed_frame, child=frame_id)
+      if T is None:
         continue
-      T = tr.quaternion_matrix(rot)
-      T[:3,3] = pos
-      try:
+      try:  # Avoid crashing when the OpenRAVE environment is destroyed
         with self.env:
           body.SetTransform(T)
         updated_bodies.append([body.GetName(), frame_id, ''])
