@@ -153,7 +153,7 @@ class RaveStateUpdater():
   def robots_with_joint_states(self):
     return list(self.js_robots)
   
-  def get_transform_from_tf(self, parent, child):
+  def get_transform_from_tf(self, parent, child, time=None):
     """
     Gets the transformation of the C{child} frame w.r.t the C{parent} frame from TF.
     @type  parent: string
@@ -163,9 +163,11 @@ class RaveStateUpdater():
     @rtype: np.array
     @return: The transformation of the C{child} w.r.t the C{parent} frame. C{None} if failed.
     """
+    if time is None:
+      # Get the latest available transform
+      time = rospy.Time(0)
     try:
-      # Access the latest available transforms in the TF tree,
-      (pos,rot) = self.listener.lookupTransform(parent, child, rospy.Time(0))
+      (pos, rot) = self.listener.lookupTransform(parent, child, time)
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
       return None
     T = tr.quaternion_matrix(rot)
