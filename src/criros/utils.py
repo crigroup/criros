@@ -245,6 +245,26 @@ def read_parameter_fatal(name):
       raise Exception( 'Required parameter {0} not found'.format(name) )
   return rospy.get_param(name, None)
 
+def solve_namespace(namespace=''):
+  """
+  Appends neccessary slashes required for a proper ROS namespace.
+  @type namespace: string
+  @param namespace: namespace to be fixed.
+  @rtype: string
+  @return: Proper ROS namespace.
+  """
+  if len(namespace) == 0:
+    namespace = rospy.get_namespace()
+  elif len(namespace) == 1:
+    if namespace != '/':
+      namespace = '/' + namespace + '/'
+  else:
+    if namespace[0] != '/':
+      namespace = '/' + namespace
+    if namespace[-1] != '/':
+      namespace += '/'
+  return namespace
+
 def unique(data):
   """
   Finds the unique elements of an array. B{row-wise} and 
