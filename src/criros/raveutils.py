@@ -94,6 +94,9 @@ class RaveStateUpdater():
     # Start a thread to update all the objects found in TF and OpenRAVE
     self.rate = rate
     self.elapsed_time = 0.0
+    self.update_rave_environment() # Update env at least once in case stop() 
+                                   # is called immediately without delay
+
     self.timer = rospy.Timer(rospy.Duration(1.0/rate), self.update_rave_environment)
     rospy.on_shutdown(self.stop)
   
@@ -174,13 +177,29 @@ class RaveStateUpdater():
     T[:3,3] = pos
     return T
   
-  def stop(self):
+  def stop(self, delay=0):
     """
+    @type  delay: float
+    @param delay: Delay time(s) before shutting down the update thread.
+                  Suggested value is 0.3 to accomodate delay around 0.2s
+                  in encoder feedback. This ensures openrave env state is
+                  up-to-date and correct before update stops.
     If the update thread is running, stops it.
-    Once you stop the update thread B{you have to call manually} the C{update_rave_environment}.
+    Once you stop the update thread you can either manually call 
+    C{update_rave_environment} or call C{restart} to restart updating.
     """
     if self.timer.is_alive():
+      rospy.sleep(delay)
       self.timer.shutdown()
+
+  def restart(self):
+    """
+    If the update thread is stopped, restart it.
+    """
+    if not self.timer.is_alive():
+      del self.timer
+      self.timer = rospy.Timer(rospy.Duration(1.0/self.rate),
+                               self.update_rave_environment)
   
   def update_rave_environment(self, event=None):
     """
