@@ -60,7 +60,7 @@ class RaveStateUpdater():
       logger.logerr('time is not initialized. Have you called rospy.init_node()?')
       return
     # TODO: Wait until we hear something from TF
-    rospy.sleep(5.0)
+    rospy.sleep(1.0)
     # Subscribe to the joint_states topics that match a robot in OpenRAVE
     topics = rosgraph.Master('/rostopic').getPublishedTopics('/')
     self.js_topics = []
@@ -72,6 +72,8 @@ class RaveStateUpdater():
         namespace = topic_name.replace('/', '').replace('joint_states','')
         robot = self._find_rave_body(namespace)
         if robot is not None:
+          dofindices = robot.GetActiveManipulator().GetArmIndices()
+          robot.SetActiveDOFs(dofindices)
           self.js_topics.append(topic_name)
           self.js_robots.append(robot.GetName())
     self.js_msgs = [None]*len(self.js_topics)
@@ -252,12 +254,9 @@ class RaveStateUpdater():
       robot = self.env.GetRobot(robot_name)
       if robot is None:
         continue
-      try:
-        with self.env:
-          robot.SetActiveDOFValues(msg.position)
-        updated_robots.append([robot_name, topic])
-      except:
-        pass
+      with self.env:
+        robot.SetActiveDOFValues(msg.position)
+      updated_robots.append([robot_name, topic])
     # Report what we are updating every sec
     report = False
     if event is None:
