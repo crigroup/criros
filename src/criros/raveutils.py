@@ -357,6 +357,21 @@ def environment_from_dict(config, env=None, logger=TextColors()):
   # Return configure environment
   return env
 
+def get_enabled_bodies(env):
+  """
+  Returns a C{set} with the names of the bodies enabled in the given environment
+  @type  env: orpy.Environment
+  @param env: The OpenRAVE environment
+  @rtype: set
+  @return: The names of the enabled bodies
+  """
+  enabled_bodies = []
+  with env:
+    for body in env.GetBodies():
+      if body.IsEnabled():
+        enabled_bodies.append(body.GetName())
+  return set(enabled_bodies)
+
 def get_robot_iktypes(robot):
   """
   Returns a dict with the manipulator:iktype pair that there is a iksolver available. 

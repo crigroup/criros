@@ -76,6 +76,12 @@ class TestraveutilsModule(unittest.TestCase):
     Tcamviewer = viewer.GetCameraTransform()
     np.testing.assert_allclose(Texpected, Tcamviewer, atol=1e-5)
   
+  def test_get_enabled_bodies(self):
+    env = self.env
+    expected = set([body.GetName() for body in env.GetBodies()])
+    enabled_bodies = criros.raveutils.get_enabled_bodies(env)
+    self.assertEqual(expected, enabled_bodies)
+  
   def test_get_robot_iktypes(self):
     env = self.env
     robot = env.GetRobot('BarrettWAM')
@@ -141,4 +147,3 @@ class TestraveutilsModule(unittest.TestCase):
     check_transparency(robot, 0.0)
     criros.raveutils.set_body_transparency(robot, transparency=2)
     check_transparency(robot, 1.0)
-    
