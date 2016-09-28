@@ -30,7 +30,8 @@ class RaveStateUpdater():
   OpenRAVE scene to find the corresponding information in the C{joint_states}
   topics and in C{TF}.
   """
-  def __init__(self, envid, fixed_frame='base_link', rate=10., logger=TextColors()):
+  MIN_FRAMES = 6
+  def __init__(self, envid, fixed_frame='base_link', rate=10., logger=TextColors(), timeout=15.):
     """
     C{RaveStateUpdater} constructor. It uses a C{tf.TransformListener} instance to query TF.
     
@@ -59,8 +60,13 @@ class RaveStateUpdater():
     except rospy.ROSInitException:
       logger.logerr('time is not initialized. Have you called rospy.init_node()?')
       return
-    # TODO: Wait until we hear something from TF
-    rospy.sleep(1.0)
+    # Wait until TF has enough frames
+    starttime = rospy.get_time()
+    while len(self.listener.getFrameStrings()) < self.MIN_FRAMES:
+      rospy.sleep(0.1)
+      if (rospy.get_time()-starttime) > timeout:
+        logger.logerr('Timed-out while waiting to hear from TF'.format( body_names ))
+        return
     # Subscribe to the joint_states topics that match a robot in OpenRAVE
     topics = rosgraph.Master('/rostopic').getPublishedTopics('/')
     self.js_topics = []
