@@ -4,6 +4,8 @@ import criros
 import itertools
 import numpy as np
 import openravepy as orpy
+# Convex hull
+from scipy.spatial import ConvexHull
 # ROS
 import rospy
 import roslib.message
@@ -464,3 +466,23 @@ def set_body_transparency(body, transparency=0.0):
     for link in body.GetLinks():
       for geom in link.GetGeometries():
         geom.SetTransparency(transparency)
+
+def trimesh_from_point_cloud(cloud):
+  """
+  Converts a PCL point cloud into a OpenRAVE trimesh
+  @type  cloud: pcl.Cloud
+  @param cloud: The PCL cloud
+  @rtype: orpy.Trimesh
+  @return: The OpenRAVE trimesh
+  """
+  points = np.asarray(cloud)
+  hull = ConvexHull(points)
+  # Make the edges counterclockwise order
+  midpoint = np.sum(hull.points, axis=0) / hull.points.shape[0]
+  for i, simplex in enumerate(hull.simplices):
+    x, y, z = hull.points[simplex]
+    voutward = (x + y + z) / 3 - midpoint
+    vccw = np.cross((y - x), (z - y))
+    if np.inner(vccw, voutward) < 0:
+      hull.simplices[i] = [simplex[0], simplex[2], simplex[1]]
+  return orpy.TriMesh(hull.points, hull.simplices)

@@ -99,7 +99,7 @@ class TestraveutilsModule(unittest.TestCase):
     criros.raveutils.move_origin_to_body(robot)
     np.testing.assert_allclose(robot.GetTransform(), np.eye(4))
     # The floorwalls now must have the inv(Tinit_robot)
-    np.testing.assert_allclose(floorwalls.GetTransform(), np.linalg.inv(Tinit_robot))
+    np.testing.assert_allclose(floorwalls.GetTransform(), criros.spalg.transform_inv(Tinit_robot))
   
   def test_random_joint_positions(self):
     env = self.env
@@ -147,3 +147,18 @@ class TestraveutilsModule(unittest.TestCase):
     check_transparency(robot, 0.0)
     criros.raveutils.set_body_transparency(robot, transparency=2)
     check_transparency(robot, 1.0)
+  
+  def test_trimesh_from_point_cloud(self):
+    env = self.env
+    body = env.GetKinBody('mug1')
+    corners = criros.raveutils.compute_bounding_box_corners(body, Tbody=None, scale=1.0)
+    trimesh = criros.raveutils.trimesh_from_point_cloud(corners)
+    testbody = orpy.RaveCreateKinBody(env, '')
+    testbody.SetName('testbody')
+    testbody.InitFromTrimesh(trimesh, draw=True)
+    env.Add(testbody, True)
+    # Compare AABBs
+    body_aabb = body.ComputeAABB()
+    testbody_aabb = testbody.ComputeAABB()
+    np.testing.assert_allclose(body_aabb.pos(), testbody_aabb.pos())
+    np.testing.assert_allclose(body_aabb.extents(), testbody_aabb.extents())
