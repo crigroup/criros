@@ -67,7 +67,7 @@ class RaveStateUpdater():
     while len(self.listener.getFrameStrings()) < self.MIN_FRAMES:
       rospy.sleep(0.1)
       if (rospy.get_time()-starttime) > timeout:
-        logger.logerr('Timed-out while waiting to hear from TF'.format( body_names ))
+        logger.logerr('Timed-out while waiting to hear from TF')
         return
     # Subscribe to the joint_states topics that match a robot in OpenRAVE
     topics = rosgraph.Master('/rostopic').getPublishedTopics('/')
@@ -245,6 +245,9 @@ class RaveStateUpdater():
       body = self._find_rave_body(frame_id)
       if (body is None) or (body.GetName() in blacklist):
         continue
+      # Validate robots case.
+      if body.IsRobot() and 'base_link' != frame_id.split('/')[1]:
+        continue
       T = self.get_transform_from_tf(parent=self.fixed_frame, child=frame_id)
       if T is None:
         continue
@@ -340,7 +343,7 @@ def environment_from_dict(config, env=None, logger=TextColors()):
   if not env.Load(config['world']):
     env = None
     return None
-  # Process OPTIONAL parameters
+  # OPTIONAL parameters
   # Viewer parameters
   if config.has_key('viewer'):
     viewer_name = config['viewer']['name']
@@ -356,7 +359,7 @@ def environment_from_dict(config, env=None, logger=TextColors()):
     elif env.GetViewer() is not None:
       Tcam = criros.conversions.from_dict(transform_dict)
       env.GetViewer().SetCamera(Tcam)
-  # Return configure environment
+  # Return configured environment
   return env
 
 def get_enabled_bodies(env):
