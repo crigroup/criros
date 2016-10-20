@@ -192,7 +192,7 @@ class RaveStateUpdater():
     C{update_rave_environment} or call C{restart} to restart updating.
     @type  delay: float
     @param delay: Delay time(s) before shutting down the update thread. 
-    Suggested value is 0.3 to accomodate delay around 0.2s in encoder 
+    Suggested value is 0.3 to accommodate delay around 0.2s in encoder 
     feedback. This ensures openrave env state is up-to-date and correct 
     before update stops.
     """
@@ -319,6 +319,19 @@ def compute_bounding_box_corners(body, Tbody=None, scale=1.0):
   for k in itertools.product([-1,1],[-1,1],[-1,1]):
     corners.append(aabb.pos() + np.array(k)*aabb.extents()*scale)
   return corners
+
+def enable_body(body, enable):
+  """
+  Enables all the links of a body.
+  @type  body: orpy.KinBody
+  @param body: The OpenRAVE body
+  @type  enable: bool
+  @param enable: If true, will enable all the links.
+  """
+  env = body.GetEnv()
+  with env:
+    for link in body.GetLinks():
+      link.Enable(enable)
 
 def environment_from_dict(config, env=None, logger=TextColors()):
   """
