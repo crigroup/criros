@@ -8,16 +8,18 @@ import openravepy as orpy
 
 
 class TestraveutilsModule(unittest.TestCase):
-  def setUp(self):
+  @classmethod
+  def setUpClass(cls):
     np.set_printoptions(precision=6, suppress=True)
-    self.env = orpy.Environment()
-    if not self.env.Load('data/lab1.env.xml'):
+    cls.env = orpy.Environment()
+    if not cls.env.Load('data/lab1.env.xml'):
       raise Exception('Could not load scene: data/lab1.env.xml')
     print('') # dummy line
   
-  def tearDown(self):
-    self.env.Reset()
-    self.env.Destroy()
+  @classmethod
+  def tearDownClass(cls):
+    cls.env.Reset()
+    cls.env.Destroy()
   
   def test_compute_bounding_box_corners(self):
     env = self.env
@@ -114,10 +116,11 @@ class TestraveutilsModule(unittest.TestCase):
   def test_remove_bodies(self):
     env = self.env
     # Remove all the mugs
-    remove = [body.GetName() for body in env.GetBodies() if 'mug' in body.GetName()]
+    remove = [body.GetName() for body in env.GetBodies() if ('mug' in body.GetName()) and (body.GetName() != 'mug1') ]
     criros.raveutils.remove_bodies(env, remove=remove)
     expected_bodies = ['BarrettWAM',
                        'floorwalls',
+                       'mug1',
                        'pole',
                        'pole2',
                        'pole3',
@@ -127,10 +130,10 @@ class TestraveutilsModule(unittest.TestCase):
                        'table']
     found_bodies = [body.GetName() for body in env.GetBodies()]
     self.assertEqual(set(expected_bodies), set(found_bodies))
-    # Keep only the robot
-    criros.raveutils.remove_bodies(env, keep=['BarrettWAM'])
+    # Keep only the robot and mug1
+    criros.raveutils.remove_bodies(env, keep=['BarrettWAM', 'mug1'])
     found_bodies = [body.GetName() for body in env.GetBodies()]
-    self.assertEqual(set(['BarrettWAM']), set(found_bodies))
+    self.assertEqual(set(['BarrettWAM', 'mug1']), set(found_bodies))
   
   def test_set_body_transparency(self):
     # Helper function

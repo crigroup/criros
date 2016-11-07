@@ -392,7 +392,7 @@ def get_enabled_bodies(env):
 
 def get_robot_iktypes(robot):
   """
-  Returns a dict with the manipulator:iktype pair that there is a iksolver available. 
+  Returns a dict with the manipulator:[iktypes] pairs of available iksolvers . 
   @type  refbody: orpy.Robot
   @param refbody: The OpenRAVE robot
   @rtype: orpy.Environment
