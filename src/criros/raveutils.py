@@ -375,6 +375,20 @@ def environment_from_dict(config, env=None, logger=TextColors()):
   # Return configured environment
   return env
 
+def get_arm_length_estimate(robot):
+  """
+  The best estimate of arm length is to sum up the distances of the anchors of all the points in between the chain
+  """
+  manip = robot.GetActiveManipulator()
+  armjoints = [j for j in robot.GetDependencyOrderedJoints() if j.GetJointIndex() in manip.GetArmIndices()]
+  baseanchor = armjoints[0].GetAnchor()
+  eetrans = manip.GetEndEffectorTransform()[0:3,3]
+  armlength = 0
+  for j in armjoints[::-1]:
+    armlength += np.sqrt(np.sum((eetrans-j.GetAnchor())**2))
+    eetrans = j.GetAnchor()
+  return armlength
+
 def get_enabled_bodies(env):
   """
   Returns a C{set} with the names of the bodies enabled in the given environment
