@@ -7,6 +7,7 @@ import openravepy as orpy
 import tf.transformations as tr
 # Messages
 from geometry_msgs.msg import Point, Quaternion, Pose, Vector3
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 # OpenRAVE types <--> Numpy types
@@ -174,3 +175,49 @@ def from_rviz_vector(value, maptype=float):
   """
   strlst = value.split(';')
   return np.array( map(maptype, strlst) )
+
+
+def ros_trajectory_from_openrave(robot_name, traj):
+  """
+  Converts an OpenRAVE trajectory into a ROS JointTrajectory message.
+  @type  robot_name: str
+  @param robot_name: The robot name
+  @type  traj: orpy.Trajectory
+  @param traj: The input OpenRAVE trajectory
+  @rtype: trajectory_msgs/JointTrajectory
+  @return: The equivalent ROS JointTrajectory message
+  """
+  ros_traj = JointTrajectory()
+  # Specification groups
+  spec = traj.GetConfigurationSpecification()
+  try:
+    values_group = spec.GetGroupFromName('joint_values {0}'.format(robot_name))
+  except orpy.openrave_exception:
+    orpy.RaveLogError('Corrupted trajectory. Failed to find group: joint_values')
+    return None
+  try:
+    velocities_group = spec.GetGroupFromName('joint_velocities {0}'.format(robot_name))
+  except orpy.openrave_exception:
+    orpy.RaveLogError('Corrupted trajectory. Failed to find group: joint_velocities')
+    return None
+  try:
+    deltatime_group = spec.GetGroupFromName('deltatime')
+  except orpy.openrave_exception:
+    orpy.RaveLogError('Corrupted trajectory. Failed to find group: deltatime')
+    return None
+  # Copy waypoints
+  time_from_start = 0
+  for i in range(traj.GetNumWaypoints()):
+    deltatime = waypoint[deltatime_group.offset]
+    # OpenRAVE trajectory sometimes comes with repeated waypoints. DO NOT append them
+    if np.isclose(deltatime, 0) and i > 0:
+      continue
+    # Append waypoint
+    ros_point = JointTrajectoryPoint()
+    waypoint = traj.GetWaypoint(i).tolist()
+    ros_point.positions = waypoint[values_group.offset:values_group.offset+values_group.dof]
+    ros_point.velocities = waypoint[velocities_group.offset:velocities_group.offset+velocities_group.dof]
+    time_from_start += deltatime
+    ros_point.time_from_start = rospy.Duration(time_from_start)
+    ros_traj.points.append(ros_point)
+  return ros_traj
