@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import copy
+import time
 import numpy as np
 import rospy, sys, inspect
 from sensor_msgs.msg import JointState
@@ -301,6 +303,7 @@ def sorted_joint_state_msg(msg, joint_names):
   valid_effort = len(msg.name) == len(msg.effort)
   num_joints = len(valid_names)
   retmsg = JointState()
+  retmsg.header = copy.deepcopy(msg.header)
   for name in joint_names:
     if name not in valid_names:
       continue
@@ -329,3 +332,12 @@ def unique(data):
   ui = np.ones(len(data), 'bool')
   ui[1:] = (diff != 0).any(axis=1) 
   return data[ui]
+
+def wait_for(predicate, timeout=5.0):
+  start_time = time.time()
+  while not predicate():
+    now = time.time()
+    if (now - start_time) > timeout:
+      return False
+    time.sleep(0.001)
+  return True
