@@ -6,6 +6,57 @@ import rospy, sys, inspect
 from sensor_msgs.msg import JointState
 
 
+class PID:
+  def __init__(self, Kp, Ki=None, Kd=None):
+    # Proportional gain
+    self.Kp = np.array(Kp)
+    self.Ki = np.zeros_like(Kp)
+    self.Kd = np.zeros_like(Kp)
+    # Integral gain
+    if Ki is not None:
+      self.Ki = np.array(Ki)
+    # Derivative gain
+    if Kd is not None:
+      self.Kd = np.array(Kd)
+    # Reset
+    self.reset()
+  
+  def reset(self):
+    self.last_time = time.time()
+    self.last_error = np.zeros_like(self.Kp)
+    self.integral = np.zeros_like(self.Kp)
+    self.set_windup(np.ones_like(self.Kp))
+  
+  def set_gains(self, Kp=None, Ki=None, Kd=None):
+    if Kp is not None:
+      self.Kp = np.array(Kp)
+    if Ki is not None:
+      self.Ki = np.array(Ki)
+    if Kd is not None:
+      self.Kd = np.array(Kd)
+  
+  def set_windup(self, windup):
+    self.i_min = np.array(windup)
+    self.i_max = np.array(windup)
+  
+  def update(self, error, dt=None):
+    now = time.time()
+    if dt is None:
+      dt = now - self.last_time
+    delta_error = error - self.last_error
+    # Compute terms
+    self.integral += error * dt
+    p_term = self.Kp * error
+    i_term = self.Ki * self.integral
+    i_term = np.maximum(self.i_min, np.minimum(i_term, self.i_max))
+    d_term = self.Kd * delta_error / dt
+    output = p_term + i_term + d_term
+    # Save last values
+    self.last_error = np.array(error)
+    self.last_time = now
+    return output
+
+
 class TextColors:
   """
   The C{TextColors} class is used as alternative to the C{rospy} logger. It's useful to
