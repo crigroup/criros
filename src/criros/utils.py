@@ -18,6 +18,7 @@ class PID:
     # Derivative gain
     if Kd is not None:
       self.Kd = np.array(Kd)
+    self.set_windup(np.ones_like(self.Kp))
     # Reset
     self.reset()
   
@@ -25,7 +26,6 @@ class PID:
     self.last_time = time.time()
     self.last_error = np.zeros_like(self.Kp)
     self.integral = np.zeros_like(self.Kp)
-    self.set_windup(np.ones_like(self.Kp))
   
   def set_gains(self, Kp=None, Ki=None, Kd=None):
     if Kp is not None:
@@ -36,7 +36,7 @@ class PID:
       self.Kd = np.array(Kd)
   
   def set_windup(self, windup):
-    self.i_min = np.array(windup)
+    self.i_min = -np.array(windup)
     self.i_max = np.array(windup)
   
   def update(self, error, dt=None):
