@@ -365,13 +365,14 @@ def environment_from_dict(config, env=None, logger=TextColors()):
     else:
       env.SetViewer(viewer_name)
     # The camera where we look the viewer from
-    transform_dict = config['viewer']['camera']
-    camera_fields = ['rotation','translation']
-    if not criros.utils.has_keys(transform_dict, camera_fields):
-      logger.logwarn('camera dict does not have the required fields: {0}'.format(camera_fields))
-    elif env.GetViewer() is not None:
-      Tcam = criros.conversions.from_dict(transform_dict)
-      env.GetViewer().SetCamera(Tcam)
+    if config['viewer'].has_key('camera'):
+      transform_dict = config['viewer']['camera']
+      camera_fields = ['rotation','translation']
+      if not criros.utils.has_keys(transform_dict, camera_fields):
+        logger.logwarn('camera dict does not have the required fields: {0}'.format(camera_fields))
+      elif env.GetViewer() is not None:
+        Tcam = criros.conversions.from_dict(transform_dict)
+        env.GetViewer().SetCamera(Tcam)
   # Return configured environment
   return env
 
