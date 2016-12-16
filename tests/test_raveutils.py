@@ -5,6 +5,7 @@ import criros
 import unittest
 import numpy as np
 import openravepy as orpy
+import tf.transformations as tr
 
 
 class TestraveutilsModule(unittest.TestCase):
@@ -102,6 +103,39 @@ class TestraveutilsModule(unittest.TestCase):
     np.testing.assert_allclose(robot.GetTransform(), np.eye(4))
     # The floorwalls now must have the inv(Tinit_robot)
     np.testing.assert_allclose(floorwalls.GetTransform(), criros.spalg.transform_inv(Tinit_robot))
+  
+  def test_move_out_of_collision(self):
+    env = orpy.Environment()
+    env.Load('data/pumablocks.env.xml')
+    body = env.GetKinBody('lego0')
+    Tinit = body.GetTransform()
+    def move_until_collision(step, direction, timeout=1.0):
+      start_time = time.time()
+      Tcollision = body.GetTransform()
+      while not env.CheckCollision(body):
+        Tcollision[:3,3] += step*np.array(direction)
+        body.SetTransform(Tcollision)
+        if time.time()-start_time > timeout:
+          return False
+      return True
+    # Move down into collision with the table
+    body.SetTransform(Tinit)
+    self.assertTrue( move_until_collision(0.005, [0, -1, 0]) )
+    result = criros.raveutils.move_out_of_collision(env, body, max_displacement=0.006)
+    self.assertTrue(result)
+    body.SetTransform(Tinit)
+    self.assertTrue( move_until_collision(0.005, [0, -1, 0]) )
+    result = criros.raveutils.move_out_of_collision(env, body, max_displacement=0.001)
+    self.assertFalse(result)
+    # Show we can cope with tilted objects
+    body.SetTransform(Tinit)
+    move_until_collision(0.005, [0, -1, 0])
+    Toffset = tr.euler_matrix(np.deg2rad(10), 0, 0)
+    Tbody = body.GetTransform()
+    Tnew = np.dot(Tbody, Toffset)
+    body.SetTransform(Tnew)
+    result = criros.raveutils.move_out_of_collision(env, body, max_displacement=0.015)
+    self.assertTrue(result)
   
   def test_random_joint_positions(self):
     env = self.env

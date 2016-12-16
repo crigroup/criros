@@ -3,9 +3,8 @@ import copy
 import criros
 import itertools
 import numpy as np
+import scipy.spatial
 import openravepy as orpy
-# Convex hull
-from scipy.spatial import ConvexHull
 # ROS
 import rospy
 import roslib.message
@@ -441,6 +440,80 @@ def move_origin_to_body(refbody):
       Tbody = body.GetTransform()
       body.SetTransform( np.dot(Toffset, Tbody) )
 
+
+def move_out_of_collision(env, body, max_displacement=0.005):
+  """
+  Moves an OpenRAVE body out of collision in the opposite direction to the penetration direction.
+  @type  env: orpy.Environment
+  @param env: The OpenRAVE environment.
+  @type  body: orpy.KinBody
+  @param body: The OpenRAVE body.
+  @type  max_displacement: float
+  @param max_displacement: The maximum displacement we can apply to the body.
+  """
+  if not env.CheckCollision(body):
+    # Not in collision
+    return True
+  # Need to use pqp collision checker
+  previous_cc = env.GetCollisionChecker()
+  checker = orpy.RaveCreateCollisionChecker(env, 'pqp')
+  checker.SetCollisionOptions(orpy.CollisionOptions.Distance|orpy.CollisionOptions.Contacts)
+  env.SetCollisionChecker(checker)
+  # Collision report
+  report = orpy.CollisionReport()
+  env.CheckCollision(body, report)
+  # Restore previous collision checker
+  env.SetCollisionChecker(previous_cc)
+  # Get the direction we should push the object
+  positions = []
+  normals = []
+  occurrences = []
+  for c in report.contacts:
+    positions.append(c.pos)
+    if len(normals) == 0:
+      normals.append(c.norm)
+      occurrences.append(1)
+      continue
+    found = False
+    for i,normal in enumerate(normals):
+      if np.allclose(c.norm, normal):
+        occurrences[i] += 1
+        found = True
+        break
+    if not found:
+      normals.append(c.norm)
+      occurrences.append(1)
+  push_direction = tr.unit_vector(normals[np.argmax(occurrences)])
+  # Get the distance we should push the object
+  hull = scipy.spatial.ConvexHull(positions)
+  vertices = np.array(positions)[hull.vertices]
+  push_distance = -float('inf')
+  for i in range(len(vertices)):
+    p1 = vertices[i]
+    for j in range(i+1, len(vertices)):
+      p2 = vertices[j]
+      dist = np.linalg.norm((p1-p2)*push_direction)
+      if dist > push_distance:
+        push_distance = dist
+  push_distance = push_distance + 0.001
+  if not (0 < push_distance < max_displacement):
+    print 'push_distance: {0}'.format(push_distance)
+    return False
+  # Move the object out of collision
+  Tbody = body.GetTransform()
+  Tnew = np.array(Tbody)
+  Tnew[:3,3] += push_distance*push_direction
+  body.SetTransform(Tnew)
+  if env.CheckCollision(body):
+    # Failed to move it out of collision
+    body.SetTransform(Tbody)
+    print 'Failed to move it out of collision'
+    print 'push_distance: {0}'.format(push_distance)
+    print 'push_direction: {0}'.format(push_direction)
+    return False
+  # Restore previous collision checker
+  return True
+
 def random_joint_positions(robot):
   """
   Generates random joint positions within joint limits for the given robot.
@@ -507,7 +580,7 @@ def trimesh_from_point_cloud(cloud):
   @return: The OpenRAVE trimesh
   """
   points = np.asarray(cloud)
-  hull = ConvexHull(points)
+  hull = scipy.spatial.ConvexHull(points)
   # Make the edges counterclockwise order
   midpoint = np.sum(hull.points, axis=0) / hull.points.shape[0]
   for i, simplex in enumerate(hull.simplices):
