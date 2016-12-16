@@ -4,6 +4,8 @@ import tf
 import rospy
 import criros
 import numpy as np
+import tf.transformations as tr
+
 
 if __name__ == '__main__':
   node_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -12,6 +14,7 @@ if __name__ == '__main__':
   logger.loginfo('Starting [%s] node' % node_name)
   # Read publish rate
   publish_rate = criros.read_parameter('~publish_rate', 60.0)
+  invert = criros.read_parameter('~invert', False)
   # Read all the other parameters
   try:
     params = rospy.get_param('~')
@@ -44,6 +47,14 @@ if __name__ == '__main__':
         if listener.frameExists(newchild):
           child = newchild
       parent = params['parent']
-      broadcaster.sendTransform(trans, rot, rospy.Time.now(), child, parent)
+      if not invert:
+        broadcaster.sendTransform(trans, rot, rospy.Time.now(), child, parent)
+      else:
+        T = tr.quaternion_matrix(rot)
+        T[:3,3] = trans
+        Tinv = criros.spalg.transform_inv(T)
+        trans_inv = Tinv[:3,3]
+        rot_inv = tr.quaternion_from_matrix(Tinv)
+        broadcaster.sendTransform(trans_inv, rot_inv, rospy.Time.now(), parent, child)
     rate.sleep()
   rospy.loginfo('Shuting down [%s] node' % node_name)
