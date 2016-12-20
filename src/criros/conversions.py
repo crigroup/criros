@@ -81,7 +81,7 @@ def from_point(msg):
   @rtype: np.array
   @return: The resulting numpy array
   """
-  return np.array([msg.x, msg.y, msg.z])
+  return from_point(msg)
 
 def from_pose(msg):
   """
@@ -104,7 +104,19 @@ def from_quaternion(msg):
   @return: The resulting numpy array
   """
   return np.array([msg.x, msg.y, msg.z, msg.w])
-  
+
+def from_transform(msg):
+  """
+  Converts a C{geometry_msgs/Transform} ROS message into a numpy array.
+  @type  msg: geometry_msgs/Transform
+  @param msg: The ROS message to be converted
+  @rtype: np.array
+  @return: The resulting numpy array
+  """
+  T = tr.quaternion_matrix(from_quaternion(msg.rotation))
+  T[:3,3] = from_vector3(msg.translation)
+  return T
+
 def from_vector3(msg):
   """
   Converts a C{geometry_msgs/Vector3} ROS message into a numpy array.
