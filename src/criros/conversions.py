@@ -81,7 +81,7 @@ def from_point(msg):
   @rtype: np.array
   @return: The resulting numpy array
   """
-  return from_point(msg)
+  return from_vector3(msg)
 
 def from_pose(msg):
   """
