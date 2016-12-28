@@ -497,7 +497,6 @@ def move_out_of_collision(env, body, max_displacement=0.005):
         push_distance = dist
   push_distance = push_distance + 0.001
   if not (0 < push_distance < max_displacement):
-    print '{0} - push_distance: {0}'.format(body.GetName(), push_distance)
     return False
   # Move the object out of collision
   Tbody = body.GetTransform()
@@ -507,9 +506,6 @@ def move_out_of_collision(env, body, max_displacement=0.005):
   if env.CheckCollision(body):
     # Failed to move it out of collision
     body.SetTransform(Tbody)
-    print 'Failed to move it out of collision'
-    print 'push_distance: {0}'.format(push_distance)
-    print 'push_direction: {0}'.format(push_direction)
     return False
   # Restore previous collision checker
   return True
