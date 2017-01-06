@@ -485,29 +485,17 @@ def move_out_of_collision(env, body, max_displacement=0.005):
       occurrences.append(1)
   push_direction = tr.unit_vector(normals[np.argmax(occurrences)])
   # Get the distance we should push the object
-  hull = scipy.spatial.ConvexHull(positions)
-  vertices = np.array(positions)[hull.vertices]
-  push_distance = -float('inf')
-  for i in range(len(vertices)):
-    p1 = vertices[i]
-    for j in range(i+1, len(vertices)):
-      p2 = vertices[j]
-      dist = np.linalg.norm((p1-p2)*push_direction)
-      if dist > push_distance:
-        push_distance = dist
-  push_distance = push_distance + 0.001
-  if not (0 < push_distance < max_displacement):
-    return False
-  # Move the object out of collision
   Tbody = body.GetTransform()
   Tnew = np.array(Tbody)
-  Tnew[:3,3] += push_distance*push_direction
-  body.SetTransform(Tnew)
-  if env.CheckCollision(body):
-    # Failed to move it out of collision
-    body.SetTransform(Tbody)
-    return False
-  # Restore previous collision checker
+  push_distance = 0
+  while env.CheckCollision(body):
+    push_distance += 0.001
+    Tnew[:3,3] = Tbody[:3,3] + push_distance*push_direction
+    body.SetTransform(Tnew)
+    if push_distance > max_displacement:
+      print 'push_distance: {0}'.format(push_distance)
+      body.SetTransform(Tbody)
+      return False
   return True
 
 def random_joint_positions(robot):
