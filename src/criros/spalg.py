@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 import rospy
-import scipy.optimize
 import numpy as np
-from math import sqrt
+import scipy.optimize
 import tf.transformations as tr
 
 X_AXIS = np.array([1, 0, 0])
@@ -26,6 +25,22 @@ class Plane(object):
     """
     dist = np.dot(self.normal, p) + self.offset
     return dist
+
+
+def counterclockwise_hull(hull):
+  """
+  Make the edges counterclockwise order
+  @type  hull: scipy.spatial.ConvexHull
+  @param hull: Convex hull to be re-ordered.
+  """
+  midpoint = np.sum(hull.points, axis=0) / hull.points.shape[0]
+  for i, simplex in enumerate(hull.simplices):
+    x, y, z = hull.points[simplex]
+    voutward = (x + y + z) / 3 - midpoint
+    vccw = np.cross((y - x), (z - y))
+    if np.inner(vccw, voutward) < 0:
+      hull.simplices[i] = [simplex[0], simplex[2], simplex[1]]
+
 
 def fit_plane_lstsq(XYZ):
   """
