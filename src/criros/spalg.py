@@ -10,13 +10,18 @@ Z_AXIS = np.array([0, 0, 1])
 
 class Plane(object):
   """Represents a plane defined by a normal vector through the given point."""
-  def __init__(self, normal, point):
+  def __init__(self, normal=None, point=None, equation=None):
+    if equation is None:
       self.point = np.array(point)
       self.normal = tr.unit_vector(normal)
       self.offset = -np.dot(self.normal, self.point)
+    else:
+      norm = tr.vector_norm(equation[:3])
+      self.normal = tr.unit_vector(equation[:3])
+      self.offset = equation[3] / norm
   
   @property
-  def coeffs(self):
+  def coefficients(self):
     return np.hstack((self.normal, self.offset))
   
   def distance(self, p):
