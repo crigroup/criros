@@ -375,6 +375,16 @@ def environment_from_dict(config, env=None, logger=TextColors()):
   # Return configured environment
   return env
 
+def destroy_env(env):
+  """
+  Dummy function that destroys properly an OpenRAVE environment.
+  @note: Useful when working with C{IPython} + QtCoin viewer.
+  @type  env: orpy.Environment
+  @param env: The OpenRAVE environment
+  """
+  env.Reset()
+  env.Destroy()
+
 def get_arm_length_estimate(robot):
   """
   The best estimate of arm length is to sum up the distances of the anchors of all the points in between the chain

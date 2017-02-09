@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import os
+import sys
 import copy
 import time
 import numpy as np
@@ -256,6 +258,21 @@ def raise_not_implemented():
   """
   print 'Method not implemented: %s' % inspect.stack()[1][3]
   sys.exit(1)
+
+def read_key(echo=False):
+  """
+  Reads a key from the keyboard
+  @type   echo: bool, optional
+  @param  echo: if set, will show the input key in the console.
+  @rtype: str
+  @return: The limited value in the range C{[-1, 1]}
+  """
+  if not echo:
+    os.system("stty -echo")
+  key = sys.stdin.read(1)
+  if not echo:
+    os.system("stty echo")
+  return key.lower()
 
 def read_parameter(name, default):
   """

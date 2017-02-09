@@ -19,17 +19,45 @@ class Plane(object):
       norm = tr.vector_norm(equation[:3])
       self.normal = tr.unit_vector(equation[:3])
       self.offset = equation[3] / norm
+    # Plane origin
+    self.origin = -self.offset*self.normal
   
   @property
   def coefficients(self):
     return np.hstack((self.normal, self.offset))
   
-  def distance(self, p):
+  def distance(self, point):
     """
-    Calculate distance from a point p to the plane.
+    Calculates distance from a point to the plane.
+    @type  point: np.array
+    @param point: The input point
+    @rtype: float
+    @return: The distance from the point to the plane
     """
-    dist = np.dot(self.normal, p) + self.offset
+    dist = np.dot(self.normal, point) + self.offset
     return dist
+  
+  def get_transform(self):
+    """
+    Returns a the plane transform
+    @rtype: np.array
+    @return: The plane transform
+    """
+    T = np.eye(4)
+    T[:3,3] = self.origin
+    T[:3,2] = self.normal
+    return T
+  
+  def project(self, point):
+    """
+    Projects a point onto the plane.
+    @type  point: np.array
+    @param point: The input point 
+    @rtype: np.array
+    @return: The projected 3D point
+    """
+    distance = self.distance(point)
+    return (point - distance*self.normal)
 
 
 def counterclockwise_hull(hull):
