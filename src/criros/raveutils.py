@@ -19,6 +19,8 @@ from criros.utils import TextColors
 import tabulate
 from std_msgs.msg import String
 
+logger = TextColors()
+
 # Supported IK types
 iktype5D = orpy.IkParameterization.Type.TranslationDirection5D
 iktype6D = orpy.IkParameterization.Type.Transform6D
@@ -385,6 +387,15 @@ def destroy_env(env):
   env.Reset()
   env.Destroy()
 
+def generate_convex_decomposition_model(robot, padding):
+  cdmodel = orpy.databases.convexdecomposition.ConvexDecompositionModel(robot, padding=padding)
+  cdmodel.generate(padding=padding, minTriangleConvexHullThresh=12000, skinWidth=0, decompositionDepth=8, maxHullVertices=256, concavityThresholdPercent=10, mergeThresholdPercent=30, volumeSplitThresholdPercent=15)
+  cdmodel.save()
+  if cdmodel.load():
+    return cdmodel
+  else:
+    return None
+
 def get_arm_length_estimate(robot):
   """
   The best estimate of arm length is to sum up the distances of the anchors of all the points in between the chain
@@ -549,6 +560,84 @@ def remove_bodies(env, remove=None, keep=None):
     if remove_body:
       with env:
         env.Remove(body)
+
+def remove_body_padding(body):
+  """
+  Restores the collision meshes of the body. The original collision 
+  meshes are store as C{UserData} by the C{set_body_padding} function.
+  @type  body: orpy.KinBody
+  @param body: The OpenRAVE body
+  @rtype: bool
+  @return: True if succeeded, False otherwise
+  """
+  if not body.IsRobot():
+    raise Exception('Not implemented yet for bodies')
+  robot = body
+  original_collision_meshes = robot.GetUserData()
+  if original_collision_meshes is None:
+    logger.logerr('Robot user data is empty: {0}'.format(robot.GetName()))
+    return False
+  for name,meshes in original_collision_meshes.items():
+    link = robot.GetLink(name)
+    for geom,mesh in itertools.izip(link.GetGeometries(), meshes):
+      if mesh is not None:
+        geom.SetCollisionMesh(mesh)
+  return True
+
+def set_body_padding(body, padding, generate=False, links=[]):
+  """
+  Sets the padding for the specified links. If C{links} is empty, 
+  the padding will be done for ALL the links.
+  @type  body: orpy.KinBody
+  @param body: The OpenRAVE body
+  @type  padding: float
+  @param padding: The padding value.
+  @type  generate: bool
+  @param generate: If set, the ConvexDecompositionModel will be 
+  generated if it doesn't exist already.
+  @type  links: list
+  @param links: The list of links to be padded. If it is empty, 
+  the padding will be done for ALL the links.
+  @rtype: bool
+  @return: True if succeeded, False otherwise
+  """
+  if not body.IsRobot():
+    raise Exception('Not implemented yet for bodies')
+  robot = body
+  cdmodel = orpy.databases.convexdecomposition.ConvexDecompositionModel(robot, padding=padding)
+  if not cdmodel.load():
+    if generate:
+      cmodel = generate_convex_decomposition_model(robot, padding)
+      if cdmodel is None:
+        logger.logerr('Failed to generate ConvexDecompositionModel: {0}'.format(robot.GetName()))
+        return False
+    else:
+      logger.logerr('ConvexDecompositionModel database for robot {0} with padding {1:.3f} not found'.format(robot.GetName(), padding))
+      return False
+  if len(links) == 0:
+    # Do it for all the links
+    links = [l.GetName() for l in robot.GetLinks()]
+  original_collision_meshes = robot.GetUserData()
+  if original_collision_meshes is None:
+    original_collision_meshes = dict()
+  env = robot.GetEnv()
+  with env:
+    for link, linkcd in itertools.izip(robot.GetLinks(), cdmodel.linkgeometry):
+      if link.GetName() not in links:
+        continue
+      make_a_copy = link.GetName() not in original_collision_meshes
+      if make_a_copy:
+        original_collision_meshes[link.GetName()] = [None] * len(link.GetGeometries())
+      for ig,hulls in linkcd:
+        geom = link.GetGeometries()[ig]
+        if geom.IsModifiable():
+          if make_a_copy:
+            # Keep a copy of the original collision meshes
+            original_collision_meshes[link.GetName()][ig] = geom.GetCollisionMesh()
+          # Set the padded mesh
+          geom.SetCollisionMesh(cdmodel.GenerateTrimeshFromHulls(hulls))
+  robot.SetUserData(original_collision_meshes)
+  return True
 
 def set_body_transparency(body, transparency=0.0):
   """
