@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import rospy
+import trimesh
 import numpy as np
 import scipy.optimize
 import tf.transformations as tr
@@ -19,8 +20,9 @@ class Plane(object):
       norm = tr.vector_norm(equation[:3])
       self.normal = tr.unit_vector(equation[:3])
       self.offset = equation[3] / norm
+      self.point = -self.offset*self.normal
     # Plane origin
-    self.origin = -self.offset*self.normal
+    self.origin = np.array(self.point)
   
   @property
   def coefficients(self):
@@ -36,6 +38,59 @@ class Plane(object):
     """
     dist = np.dot(self.normal, point) + self.offset
     return dist
+  
+  def generate_grid(self, cells=10, side_length=1.0):
+    """
+    Generates a 3D grid with the required number of C{cells}.
+    The grid is a square with the given C{side_length}
+    @type  cells: int
+    @param cells: Number of cells for the grid
+    @type  size: float
+    @param size: The grid size in meters
+    @rtype: np.array
+    @return: The grid representation of the plane with shape (cells, 3)
+    """
+    # First create the grid in the XY plane
+    linspace =  np.linspace(-0.5,0.5,num=cells) * side_length
+    xx, yy = np.meshgrid(linspace, linspace)
+    grid = []
+    for i in range(cells):
+      # Vertical lines
+      grid.append( np.array([xx[0,i], yy[0,i], 0]) )
+      grid.append( np.array([xx[-1,i], yy[-1,i], 0]) )
+      # Horizontal lines
+      grid.append( np.array([xx[i,0], yy[i,0], 0]) )
+      grid.append( np.array([xx[i,-1], yy[i,-1], 0]) )
+    grid = np.array(grid)
+    # Second, project the grid onto the plane
+    # The equation of the XY plane is z = 0
+    T = transformation_between_planes(self.coefficients, [0,0,1,0])
+    R = T[:3,:3]
+    t = T[:3,3]
+    aligned_grid = np.dot(R, grid.T).T + t
+    return aligned_grid
+  
+  def generate_mesh(self, side_length=1.0, thickness=0.001):
+    """
+    Generates a mesh representation of the plane. It is obtained by 
+    extruding a square with the given C{side_length} to reach the 
+    specified C{thickness}
+    The grid is a square with the given C{side_length}
+    @type  side_length: float
+    @param side_length: The square side length (meters)
+    @type  thickness: float
+    @param thickness: The cuboid thickness
+    @rtype: trimesh.Trimesh
+    @return: The mes representation of the plane
+    """
+    grid = self.generate_grid(cells=2, side_length=side_length)
+    lower_point = self.origin - self.normal*thickness
+    lower_plane = Plane(normal=self.normal, point=lower_point)
+    lower_grid = lower_plane.generate_grid(cells=2, side_length=side_length)
+    points = np.vstack((grid, lower_grid))
+    hull = scipy.spatial.ConvexHull(points)
+    counterclockwise_hull(hull)
+    return trimesh.Trimesh(vertices=points, faces=hull.simplices)
   
   def get_transform(self):
     """
@@ -254,7 +309,7 @@ def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
   @param newaxis: The goal axis
   @type  oldaxis: np.array
   @param oldaxis: The initial axis
-  @rtype: array, shape (3,3)
+  @rtype: array, shape (4,4)
   @return: The resulting rotation matrix that aligns the old to the new axis.
   """
   oldaxis = tr.unit_vector(oldaxis)
