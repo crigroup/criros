@@ -24,6 +24,13 @@ class Plane(object):
     # Plane origin
     self.origin = np.array(self.point)
   
+  def __str__(self):
+    printoptions = np.get_printoptions()
+    np.set_printoptions(precision=4, suppress=True)
+    text = '<Plane(equation: {0} origin: {1})>'.format(self.coefficients, self.origin)
+    np.set_printoptions(**printoptions)
+    return text
+  
   @property
   def coefficients(self):
     return np.hstack((self.normal, self.offset))
