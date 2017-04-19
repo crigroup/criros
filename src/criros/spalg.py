@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 import rospy
-import trimesh
 import numpy as np
 import scipy.optimize
 import tf.transformations as tr
@@ -87,17 +86,18 @@ class Plane(object):
     @param side_length: The square side length (meters)
     @type  thickness: float
     @param thickness: The cuboid thickness
-    @rtype: trimesh.Trimesh
-    @return: The mes representation of the plane
+    @rtype: np.array, np.array
+    @return: vertices,faces of the mesh
     """
     grid = self.generate_grid(cells=2, side_length=side_length)
     lower_point = self.origin - self.normal*thickness
     lower_plane = Plane(normal=self.normal, point=lower_point)
     lower_grid = lower_plane.generate_grid(cells=2, side_length=side_length)
-    points = np.vstack((grid, lower_grid))
-    hull = scipy.spatial.ConvexHull(points)
+    vertices = np.vstack((grid, lower_grid))
+    hull = scipy.spatial.ConvexHull(vertices)
     counterclockwise_hull(hull)
-    return trimesh.Trimesh(vertices=points, faces=hull.simplices)
+    faces = hull.simplices
+    return vertices, faces
   
   def get_transform(self):
     """
