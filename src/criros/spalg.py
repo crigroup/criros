@@ -99,6 +99,23 @@ class Plane(object):
     faces = hull.simplices
     return vertices, faces
   
+  def get_ray_intersection(self, ray_origin, ray_dir, epsilon=1e-6):
+    """
+    Returns the point where the given ray intersects with this plane
+    @type  ray_origin: Ray origin
+    @param ray_dir: Ray direction. Must be unit vector
+    @param epsilon: Epsilon to avoid 0 division
+    @rtype: np.array
+    @return: The intersection point
+    """
+    dot = np.dot(self.normal, ray_dir)
+    if abs(dot) > epsilon:
+      w = ray_origin - self.origin
+      fac = -np.dot(self.normal, w) / dot
+      return ray_origin + (ray_dir * fac)
+    else:
+      return None
+  
   def get_transform(self):
     """
     Returns a the plane transform
