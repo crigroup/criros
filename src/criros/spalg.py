@@ -196,10 +196,9 @@ def fit_plane_optimize(points):
   sol = scipy.optimize.leastsq(residuals, p0, args=(None, XYZ))[0]
   nn = np.linalg.norm(sol[:3])
   sol /= nn
-  rospy.logdebug( 'Solution: ', sol )
-  rospy.logdebug( 'Old Error: ', (f_min(XYZ, p0)**2).sum() )
-  rospy.logdebug( 'New Error: ', (f_min(XYZ, sol)**2).sum() )
-  return sol
+  old_error = (f_min(XYZ, p0)**2).sum()
+  new_error = (f_min(XYZ, sol)**2).sum()
+  return sol, old_error, new_error
 
 def fit_plane_solve(XYZ):
   """
@@ -325,6 +324,22 @@ def perpendicular_vector(v):
     # v is (0, 0, Z)
     return Y_AXIS
   return np.array([-v[1], v[0], 0])
+
+def polygon_area(points, plane=None):
+  if plane is None:
+    plane_eq = fit_plane_optimize(points)
+    plane = Plane(equation=plane_eq)
+  total = np.zeros(3)
+  for i in range(len(points)):
+    vi1 = points[i]
+    if i is len(points)-1:
+      vi2 = points[0]
+    else:
+      vi2 = points[i+1]
+    prod = np.cross(vi1, vi2)
+    total += prod
+  result = np.dot(total, plane.normal)
+  return abs(result/2.)
 
 def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
   """
