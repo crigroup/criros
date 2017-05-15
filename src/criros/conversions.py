@@ -7,6 +7,7 @@ import openravepy as orpy
 import tf.transformations as tr
 # Messages
 from geometry_msgs.msg import Point, Quaternion, Pose, Vector3, Wrench
+from sensor_msgs.msg import CameraInfo, Image, RegionOfInterest
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -105,6 +106,11 @@ def from_quaternion(msg):
   """
   return np.array([msg.x, msg.y, msg.z, msg.w])
 
+def from_roi(msg):
+  top_left = np.array([msg.x_offset, msg.y_offset])
+  bottom_right = top_left + np.array([msg.width, msg.height])
+  return [top_left, bottom_right]
+
 def from_transform(msg):
   """
   Converts a C{geometry_msgs/Transform} ROS message into a numpy array.
@@ -162,6 +168,14 @@ def to_pose(T):
   pos = Point(*T[:3,3])
   quat = Quaternion(*tr.quaternion_from_matrix(T))
   return Pose(pos, quat)
+
+def to_roi(top_left, bottom_right):
+  msg = RegionOfInterest()
+  msg.x_offset = round(top_left[0])
+  msg.y_offset = round(top_left[1])
+  msg.width = round(abs(bottom_right[0]-top_left[0]))
+  msg.height = round(abs(bottom_right[1]-top_left[1]))
+  return msg
 
 
 def to_vector3(array):
