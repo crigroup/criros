@@ -1,8 +1,11 @@
 #! /usr/bin/env python
+import copy
 import criros
+import trimesh
 import itertools
 import numpy as np
 import scipy.spatial
+import sklearn.cluster
 import openravepy as orpy
 # Transformations
 import tf.transformations as tr
@@ -15,6 +18,34 @@ logger = TextColors()
 iktype5D = orpy.IkParameterization.Type.TranslationDirection5D
 iktype6D = orpy.IkParameterization.Type.Transform6D
 SUPPORTED_IK_TYPES = [iktype5D, iktype6D]
+
+
+class Hole(object):
+  def __init__(self, position, direction, depth):
+    self.position = np.array(position)
+    self.direction = tr.unit_vector(direction)
+    self.depth = abs(depth)
+    
+  def __repr__(self):
+    printoptions = np.get_printoptions()
+    np.set_printoptions(precision=4, suppress=True)
+    text = '<Hole(pos: {0} dir: {1} depth: {2})>'.format(self.position, self.direction, self.depth)
+    np.set_printoptions(**printoptions)
+    return text
+  
+  def __str__(self):
+    return self.__repr__()
+  
+  def get_ray(self):
+    return orpy.Ray(self.position, self.direction)
+  
+  def transform(self, T):
+    ray = self.get_ray()
+    Thole = criros.conversions.from_ray(ray)
+    Tnew = np.dot(T, Thole)
+    newray = criros.conversions.to_ray(Tnew)
+    self.position = newray.pos()
+    self.direction = newray.dir()
 
 
 def compute_bounding_box_corners(body, Tbody=None, scale=1.0):
@@ -111,6 +142,78 @@ def destroy_env(env):
   """
   env.Reset()
   env.Destroy()
+
+def find_body_holes(body, radius, absolute=True):
+  mesh_holes = dict()
+  body_holes = dict()
+  Tbody = body.GetTransform()
+  for link in body.GetLinks():
+    link_holes = []
+    Tlink = link.GetTransform()
+    for geometry in link.GetGeometries():
+      if geometry.GetType() == orpy.GeometryType.Trimesh:
+        filename = geometry.GetRenderFilename()
+        scale = geometry.GetRenderScale()
+        pose = geometry.GetTransformPose()
+        if filename not in mesh_holes:
+          mesh = trimesh.load(filename)
+          mesh_holes[filename] = find_mesh_holes(mesh.vertices, mesh.faces, radius, scale)
+        for h in mesh_holes[filename]:
+          hole = copy.deepcopy(h)
+          Tmesh = np.dot(Tlink, orpy.matrixFromPose(pose))
+          if absolute:
+            hole.transform(np.dot(Tbody,Tmesh))
+          else:
+            hole.transform(Tmesh)
+          link_holes.append(hole)
+    if len(link_holes) > 0:
+      body_holes[str(link.GetName())] = link_holes
+  return body_holes
+
+def find_mesh_holes(vert, faces, radius, scale=1.):
+  vertices = np.array(vert)*scale
+  # Circles have lots of vertices. Use clustering to locate them
+  eps = radius + 1e-3
+  db = sklearn.cluster.DBSCAN(eps=eps, min_samples=10).fit(vertices)
+  unique_labels = set(db.labels_)
+  circles_info = []
+  for k in unique_labels:
+    if k == -1:   # Unknown cluster
+      continue
+    points = vertices[db.labels_==k]
+    data = dict()
+    data['center'] = np.mean(points, axis=0)
+    equation = criros.spalg.fit_plane_optimize(points)[0]
+    data['plane'] = criros.spalg.Plane(equation=equation)
+    circles_info.append(data)
+  # One hole is composed by two circles, pair them
+  holes = []
+  num_circles = len(circles_info)
+  found = set()
+  for i in range(num_circles):
+    if i in found:
+      continue  # Skip already paired circles
+    for j in range(1, num_circles):
+      if (j in found) or (i == j):
+        continue  # Skip already paired circles
+      plane_i = circles_info[i]['plane']
+      plane_j = circles_info[j]['plane']
+      ni = plane_i.normal
+      nj = plane_j.normal
+      parallel = np.isclose(abs(np.dot(ni,nj)), 1.)
+      center_i = circles_info[i]['center']
+      center_j = circles_info[j]['center']
+      pi = center_i
+      pj = plane_i.project(center_j)
+      if parallel and np.allclose(pi, pj):
+        found.add(i)
+        found.add(j)
+        position = center_j
+        diff = center_i - center_j
+        direction = tr.unit_vector(diff)
+        depth = np.linalg.norm(diff)
+        holes.append(Hole(position, direction, depth))
+  return holes
 
 def generate_convex_decomposition_model(robot, padding):
   cdmodel = orpy.databases.convexdecomposition.ConvexDecompositionModel(robot, padding=padding)

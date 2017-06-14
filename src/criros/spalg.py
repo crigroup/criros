@@ -23,12 +23,15 @@ class Plane(object):
     # Plane origin
     self.origin = np.array(self.point)
   
-  def __str__(self):
+  def __repr__(self):
     printoptions = np.get_printoptions()
     np.set_printoptions(precision=4, suppress=True)
     text = '<Plane(equation: {0} origin: {1})>'.format(self.coefficients, self.origin)
     np.set_printoptions(**printoptions)
     return text
+  
+  def __str__(self):
+    return self.__repr__()
   
   @property
   def coefficients(self):
@@ -174,7 +177,7 @@ def fit_plane_lstsq(XYZ):
   normal = normal / nn
   return normal
 
-def fit_plane_optimize(points):
+def fit_plane_optimize(points, seed=[0,0,1,0]):
   """
   Fits a plane to a point cloud using C{scipy.optimize.leastsq}
   @type  points: list
@@ -192,13 +195,13 @@ def fit_plane_optimize(points):
     return f_min(X, params)
   
   XYZ = np.array(points).T
-  p0 = np.array([1,1,1,1])
+  p0 = np.array(seed)
   sol = scipy.optimize.leastsq(residuals, p0, args=(None, XYZ))[0]
   nn = np.linalg.norm(sol[:3])
   sol /= nn
-  old_error = (f_min(XYZ, p0)**2).sum()
-  new_error = (f_min(XYZ, sol)**2).sum()
-  return sol, old_error, new_error
+  seed_error = (f_min(XYZ, p0)**2).sum()
+  fit_error = (f_min(XYZ, sol)**2).sum()
+  return sol, seed_error, fit_error
 
 def fit_plane_solve(XYZ):
   """
