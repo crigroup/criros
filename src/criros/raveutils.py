@@ -170,7 +170,8 @@ def find_body_holes(body, radius, absolute=True):
       body_holes[str(link.GetName())] = link_holes
   return body_holes
 
-def find_mesh_holes(vert, faces, radius, scale=1.):
+def find_mesh_holes(vert, faces, radius, scale=1., fitplane_eps=1e-8, 
+                                                  fitplane_attempts=10):
   vertices = np.array(vert)*scale
   # Circles have lots of vertices. Use clustering to locate them
   eps = radius + 1e-3
@@ -181,11 +182,21 @@ def find_mesh_holes(vert, faces, radius, scale=1.):
     if k == -1:   # Unknown cluster
       continue
     points = vertices[db.labels_==k]
+    for _ in range(fitplane_attempts):
+      seed = np.zeros(4)
+      seed[:3] = tr.unit_vector(tr.random_vector(3))
+      res = criros.spalg.fit_plane_optimize(points, seed=seed)
+      equation=res[0]
+      fit_error = res[2]
+      if fit_error < fitplane_eps:
+        break
     data = dict()
     data['center'] = np.mean(points, axis=0)
-    equation = criros.spalg.fit_plane_optimize(points)[0]
-    data['plane'] = criros.spalg.Plane(equation=equation)
+    data['plane'] = criros.spalg.Plane(equation=res[0])
     circles_info.append(data)
+    if fit_error > fitplane_eps:
+      # Report circles that weren't fitted properly
+      print 'Circle planefit error above threshold: {0}'.format(fit_error)
   # One hole is composed by two circles, pair them
   holes = []
   num_circles = len(circles_info)

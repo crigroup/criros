@@ -177,7 +177,7 @@ def fit_plane_lstsq(XYZ):
   normal = normal / nn
   return normal
 
-def fit_plane_optimize(points, seed=[0,0,1,0]):
+def fit_plane_optimize(points, seed=None):
   """
   Fits a plane to a point cloud using C{scipy.optimize.leastsq}
   @type  points: list
@@ -185,15 +185,18 @@ def fit_plane_optimize(points, seed=[0,0,1,0]):
   @rtype: np.array
   @return: normalized normal vector of the plane
   """
+  if seed is None:
+    seed = np.zeros(4)
+    seed[:3] = tr.unit_vector(tr.random_vector(3))
+  # Optimization functions
   def f_min(X,p):
     normal = p[0:3]
     d = p[3]
     result = ((normal*X.T).sum(axis=1) + d) / np.linalg.norm(normal) 
     return result
-  
   def residuals(params, signal, X):
     return f_min(X, params)
-  
+  # Optimize
   XYZ = np.array(points).T
   p0 = np.array(seed)
   sol = scipy.optimize.leastsq(residuals, p0, args=(None, XYZ))[0]
