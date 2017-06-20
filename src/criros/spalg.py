@@ -4,9 +4,9 @@ import numpy as np
 import scipy.optimize
 import tf.transformations as tr
 
-X_AXIS = np.array([1, 0, 0])
-Y_AXIS = np.array([0, 1, 0])
-Z_AXIS = np.array([0, 0, 1])
+X_AXIS = np.array([1., 0., 0.])
+Y_AXIS = np.array([0., 1., 0.])
+Z_AXIS = np.array([0., 0., 1.])
 
 class Plane(object):
   """Represents a plane defined by a normal vector through the given point."""
