@@ -121,13 +121,12 @@ class Plane(object):
   
   def get_transform(self):
     """
-    Returns a the plane transform
+    Returns the plane transform
     @rtype: np.array
     @return: The plane transform
     """
-    T = np.eye(4)
+    T = rotation_matrix_from_axes(self.normal, oldaxis=Z_AXIS)
     T[:3,3] = self.origin
-    T[:3,2] = self.normal
     return T
   
   def project(self, point):

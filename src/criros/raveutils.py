@@ -478,18 +478,23 @@ def set_body_padding(body, padding, generate=False, links=[]):
   robot.SetUserData(original_collision_meshes)
   return True
 
-def set_body_transparency(body, transparency=0.0):
+def set_body_transparency(body, transparency=0.0, links=None):
   """
   Sets the transparency value of a body recursively.
   @type  body: orpy.KinBody
   @param body: The OpenRAVE body
   @type  transparency: float
   @param transparency: The transparency value. If it's out of range [0.0, 1.0], it'll be clipped.
+  @type  links: list
+  @param links: Links to be changed. By default all the links are changed
   """
   transparency = np.clip(transparency, 0.0, 1.0)
   env = body.GetEnv()
   with env:
     for link in body.GetLinks():
+      if type(links) == list:
+        if link.GetName() not in links:
+          continue
       for geom in link.GetGeometries():
         geom.SetTransparency(transparency)
 
