@@ -1,8 +1,10 @@
 #! /usr/bin/env python
+import PyKDL
 import rospy
 import numpy as np
 import scipy.optimize
 import tf.transformations as tr
+import tf_conversions.posemath as posemath
 
 X_AXIS = np.array([1., 0., 0.])
 Y_AXIS = np.array([0., 1., 0.])
@@ -363,8 +365,11 @@ def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
   if np.isclose(c, -1.0) or np.allclose(newaxis, oldaxis):
     v = perpendicular_vector(newaxis)
   else:
-    v = np.cross(oldaxis, newaxis)
-  return tr.rotation_matrix(angle, v)
+    v = tr.unit_vector(np.cross(oldaxis, newaxis))
+  # Use PyKDL axis-angle
+  axis = PyKDL.Vector(*v)
+  R = PyKDL.Rotation().Rot(axis, angle)
+  return posemath.toMatrix(PyKDL.Frame(R))
 
 def skew(v):
   """
