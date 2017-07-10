@@ -1,10 +1,9 @@
 #! /usr/bin/env python
-import PyKDL
 import rospy
 import numpy as np
 import scipy.optimize
+import openravepy as orpy
 import tf.transformations as tr
-import tf_conversions.posemath as posemath
 
 X_AXIS = np.array([1., 0., 0.])
 Y_AXIS = np.array([0., 1., 0.])
@@ -102,7 +101,11 @@ class Plane(object):
     hull = scipy.spatial.ConvexHull(vertices)
     counterclockwise_hull(hull)
     faces = hull.simplices
-    return vertices, faces
+    offset_origin = np.mean(vertices, axis=0) - self.origin
+    R = self.get_transform()[:3,:3]
+    offset_thickness = np.dot(R.T, [0,0,thickness])
+    vertices -= offset_origin + offset_thickness
+    return vertices,faces
   
   def get_ray_intersection(self, ray_origin, ray_dir, epsilon=1e-6):
     """
@@ -141,6 +144,19 @@ class Plane(object):
     """
     distance = self.distance(point)
     return (point - distance*self.normal)
+  
+  def project_ray(self, ray):
+    """
+    Projects a ray onto the plane.
+    @type  point: orpy.Ray
+    @param point: The input ray
+    @rtype: orpy.Ray
+    @return: The projected ray
+    """
+    pdir = ray.dir()
+    ndir = tr.unit_vector(pdir - np.dot(pdir, self.normal)*self.normal)
+    pos = self.project(ray.pos())
+    return orpy.Ray(pos, ndir)
 
 
 def counterclockwise_hull(hull):
@@ -348,7 +364,7 @@ def polygon_area(points, plane=None):
   result = np.dot(total, plane.normal)
   return abs(result/2.)
 
-def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
+def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS, point=None):
   """
   Returns the rotation matrix that aligns two vectors.
   @type  newaxis: np.array
@@ -366,10 +382,7 @@ def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS):
     v = perpendicular_vector(newaxis)
   else:
     v = tr.unit_vector(np.cross(oldaxis, newaxis))
-  # Use PyKDL axis-angle
-  axis = PyKDL.Vector(*v)
-  R = PyKDL.Rotation().Rot(axis, angle)
-  return posemath.toMatrix(PyKDL.Frame(R))
+  return tr.rotation_matrix(angle, v, point)
 
 def skew(v):
   """
