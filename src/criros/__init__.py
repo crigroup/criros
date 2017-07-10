@@ -2,6 +2,7 @@
 import conversions
 import exploration
 import filters
+import logger
 import raveutils
 import spalg
 import vision
