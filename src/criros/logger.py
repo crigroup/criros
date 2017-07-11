@@ -83,6 +83,7 @@ def initialize_logging(spammy_level=logging.WARNING,
   spammy_logger_names = [
     'rospy.core',
     'rospy.topics',
+    'openravepy.databases',
     'openravepy.inversekinematics',
     'openravepy.databases.inversekinematics',
   ]
