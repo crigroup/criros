@@ -254,10 +254,9 @@ def has_keys(data, keys):
 
 def raise_not_implemented():
   """
-  Prints an 'method not implemented' msg and exits with error code 1.
+  Raises a NotImplementedError exception
   """
-  print 'Method not implemented: %s' % inspect.stack()[1][3]
-  sys.exit(1)
+  raise NotImplementedError()
 
 def read_key(echo=False):
   """

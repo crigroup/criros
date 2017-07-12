@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import copy
 import criros
-import trimesh
 import itertools
 import numpy as np
 import scipy.spatial
@@ -144,6 +143,7 @@ def destroy_env(env):
   env.Destroy()
 
 def find_body_holes(body, radius, absolute=True):
+  import trimesh
   mesh_holes = dict()
   body_holes = dict()
   Tbody = body.GetTransform()
