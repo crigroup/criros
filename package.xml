@@ -16,6 +16,7 @@
 
   <run_depend>image_geometry</run_depend>
   <run_depend>python_orocos_kdl</run_depend>
+  <run_depend>python-sklearn</run_depend>
   <run_depend>python-tabulate</run_depend>
   <run_depend>python-termcolor</run_depend>
   <run_depend>rospy</run_depend>

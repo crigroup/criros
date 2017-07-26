@@ -2,8 +2,6 @@
 import rospy, math
 import numpy as np
 import scipy.signal
-# Control
-import control.matlab
 
 
 def best_fit_foaw(y, fs, m, d):
@@ -74,6 +72,7 @@ def lowpass_fo(cutoff, fs):
   @return: Numerator (b) and denominator (a) polynomials of the IIR 
   filter.
   """
+  import control.matlab
   F = control.matlab.tf(1,np.array([1/(2*np.pi*cutoff),1]))
   Fz = control.matlab.c2d(F, 1/fs, 'zoh')
   b = Fz.num[0][0][-1]
