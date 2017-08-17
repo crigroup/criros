@@ -6,7 +6,8 @@ import numpy as np
 import openravepy as orpy
 import tf.transformations as tr
 # Messages
-from geometry_msgs.msg import Point, Quaternion, Pose, Vector3, Wrench
+from geometry_msgs.msg import (Point, Quaternion, Pose, Vector3, Transform,
+                                                                        Wrench)
 from sensor_msgs.msg import CameraInfo, Image, RegionOfInterest
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -14,7 +15,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 # OpenRAVE types <--> Numpy types
 def from_dict(transform_dict):
   """
-  Converts a dictionary with the fields C{rotation} and C{translation} 
+  Converts a dictionary with the fields C{rotation} and C{translation}
   into a homogeneous transformation of type C{np.array}.
   @type transform_dict:  dict
   @param transform_dict: The dictionary to be converted.
@@ -58,7 +59,7 @@ def from_kdl_vector(vector):
   @return: The resulting numpy array
   """
   return np.array([vector.x(),vector.y(),vector.z()])
-  
+
 def from_kdl_twist(twist):
   """
   Converts a C{PyKDL.Twist} with fields into a numpy array.
@@ -71,8 +72,8 @@ def from_kdl_twist(twist):
   array[:3] = from_kdl_vector(twist.vel)
   array[3:] = from_kdl_vector(twist.rot)
   return array
-  
-  
+
+
 # ROS types <--> Numpy types
 def from_point(msg):
   """
@@ -132,7 +133,7 @@ def from_vector3(msg):
   @return: The resulting numpy array
   """
   return np.array([msg.x, msg.y, msg.z])
-  
+
 def from_wrench(msg):
   """
   Converts a C{geometry_msgs/Wrench} ROS message into a numpy array.
@@ -145,6 +146,16 @@ def from_wrench(msg):
   array[:3] = from_vector3(msg.force)
   array[3:] = from_vector3(msg.torque)
   return array
+
+def to_quaternion(array):
+  """
+  Converts a numpy array into a C{geometry_msgs/Quaternion} ROS message.
+  @type  array: np.array
+  @param array: The position as numpy array
+  @rtype: geometry_msgs/Quaternion
+  @return: The resulting ROS message
+  """
+  return Quaternion(*array)
 
 def to_point(array):
   """
@@ -177,6 +188,18 @@ def to_roi(top_left, bottom_right):
   msg.height = round(abs(bottom_right[1]-top_left[1]))
   return msg
 
+def to_transform(T):
+  """
+  Converts a homogeneous transformation (4x4) into a C{geometry_msgs/Transform}
+  ROS message.
+  @type  T: np.array
+  @param T: The homogeneous transformation
+  @rtype: geometry_msgs/Transform
+  @return: The resulting ROS message
+  """
+  translation = Vector3(*T[:3,3])
+  rotation = Quaternion(*tr.quaternion_from_matrix(T))
+  return Transform(translation, rotation)
 
 def to_vector3(array):
   """
