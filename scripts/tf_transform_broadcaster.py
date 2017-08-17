@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 import os
-import tf
+import yaml
 import rospy
 import criros
+import tf2_ros
 import numpy as np
 import tf.transformations as tr
+from geometry_msgs.msg import TransformStamped
 
 
 if __name__ == '__main__':
@@ -31,30 +33,33 @@ if __name__ == '__main__':
     logger.logwarn('No transformations found on parameter server')
     exit(0)
   # Publish tf data
-  rospy.loginfo('Publishing {0} transformation(s) to /tf'.format(len(params_list)))
-  broadcaster = tf.TransformBroadcaster()
-  listener = tf.TransformListener()
+  rospy.loginfo(
+          'Publishing {0} transformation(s) to /tf'.format(len(params_list)))
+  tf_broadcaster = tf2_ros.TransformBroadcaster()
+  tf_buffer = tf2_ros.Buffer()
+  tf_listener = tf2_ros.TransformListener(tf_buffer)
   rate = rospy.Rate(publish_rate)
+  tf_msg = TransformStamped()
   while not rospy.is_shutdown():
     for params in params_list:
       trans = np.array(params['translation'])
       rot = np.array(params['rotation'])
       child = params['child']
-      # If using gazebo, the parent of base_link will be world.
-      # Therefore, we need to change the child to world
-      if 'base_link' in child:
-        newchild = child.replace('base_link', 'world')
-        if listener.frameExists(newchild):
-          child = newchild
       parent = params['parent']
-      if not invert:
-        broadcaster.sendTransform(trans, rot, rospy.Time.now(), child, parent)
-      else:
+      tf_msg.header.stamp = rospy.Time.now()
+      if invert:
         T = tr.quaternion_matrix(rot)
         T[:3,3] = trans
         Tinv = criros.spalg.transform_inv(T)
-        trans_inv = Tinv[:3,3]
-        rot_inv = tr.quaternion_from_matrix(Tinv)
-        broadcaster.sendTransform(trans_inv, rot_inv, rospy.Time.now(), parent, child)
+        tf_msg.transform = to_transform(Tinv)
+        tf_msg.header.frame_id = child
+        tf_msg.child_frame_id = parent
+        tf_broadcaster.sendTransform(tf_msg)
+      else:
+        tf_msg.transform.translation = criros.conversions.to_vector3(trans)
+        tf_msg.transform.rotation = criros.conversions.to_quaternion(rot)
+        tf_msg.header.frame_id = parent
+        tf_msg.child_frame_id = child
+        tf_broadcaster.sendTransform(tf_msg)
     rate.sleep()
   rospy.loginfo('Shuting down [%s] node' % node_name)
