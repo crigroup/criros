@@ -51,7 +51,7 @@ if __name__ == '__main__':
         T = tr.quaternion_matrix(rot)
         T[:3,3] = trans
         Tinv = criros.spalg.transform_inv(T)
-        tf_msg.transform = to_transform(Tinv)
+        tf_msg.transform = criros.conversions.to_transform(Tinv)
         tf_msg.header.frame_id = child
         tf_msg.child_frame_id = parent
         tf_broadcaster.sendTransform(tf_msg)
