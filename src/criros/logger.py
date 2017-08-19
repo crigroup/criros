@@ -83,7 +83,6 @@ def initialize_logging(spammy_level=logging.WARNING,
   spammy_logger_names = [
     'rospy.core',
     'rospy.topics',
-    'openravepy.ikfast',
     'openravepy.databases',
     'openravepy.inversekinematics',
     'openravepy.databases.inversekinematics',
@@ -92,6 +91,9 @@ def initialize_logging(spammy_level=logging.WARNING,
   for spammy_logger_name in spammy_logger_names:
     spammy_logger = logging.getLogger(spammy_logger_name)
     spammy_logger.setLevel(spammy_level)
+  # Hide ikfast warnings
+  spammy_logger = logging.getLogger('openravepy.ikfast')
+  spammy_logger.setLevel(logging.FATAL)
   # Enable deprecation warnings, which are off by default in Python 2.7
   warnings.simplefilter('default')
   return base_logger
