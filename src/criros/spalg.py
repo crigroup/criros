@@ -23,21 +23,21 @@ class Plane(object):
       self.point = -self.offset*self.normal
     # Plane origin
     self.origin = np.array(self.point)
-  
+
   def __repr__(self):
     printoptions = np.get_printoptions()
     np.set_printoptions(precision=4, suppress=True)
     text = '<Plane(equation: {0} origin: {1})>'.format(self.coefficients, self.origin)
     np.set_printoptions(**printoptions)
     return text
-  
+
   def __str__(self):
     return self.__repr__()
-  
+
   @property
   def coefficients(self):
     return np.hstack((self.normal, self.offset))
-  
+
   def distance(self, point):
     """
     Calculates distance from a point to the plane.
@@ -48,7 +48,7 @@ class Plane(object):
     """
     dist = np.dot(self.normal, point) + self.offset
     return dist
-  
+
   def generate_grid(self, cells=10, side_length=1.0):
     """
     Generates a 3D grid with the required number of C{cells}.
@@ -79,11 +79,11 @@ class Plane(object):
     t = T[:3,3]
     aligned_grid = np.dot(R, grid.T).T + t
     return aligned_grid
-  
+
   def generate_mesh(self, side_length=1.0, thickness=0.001):
     """
-    Generates a mesh representation of the plane. It is obtained by 
-    extruding a square with the given C{side_length} to reach the 
+    Generates a mesh representation of the plane. It is obtained by
+    extruding a square with the given C{side_length} to reach the
     specified C{thickness}
     The grid is a square with the given C{side_length}
     @type  side_length: float
@@ -106,7 +106,7 @@ class Plane(object):
     offset_thickness = np.dot(R.T, [0,0,thickness])
     vertices -= offset_origin + offset_thickness
     return vertices,faces
-  
+
   def get_ray_intersection(self, ray_origin, ray_dir, epsilon=1e-6):
     """
     Returns the point where the given ray intersects with this plane
@@ -123,7 +123,7 @@ class Plane(object):
       return ray_origin + (ray_dir * fac)
     else:
       return None
-  
+
   def get_transform(self):
     """
     Returns the plane transform
@@ -133,18 +133,18 @@ class Plane(object):
     T = rotation_matrix_from_axes(self.normal, oldaxis=Z_AXIS)
     T[:3,3] = self.origin
     return T
-  
+
   def project(self, point):
     """
     Projects a point onto the plane.
     @type  point: np.array
-    @param point: The input point 
+    @param point: The input point
     @rtype: np.array
     @return: The projected 3D point
     """
     distance = self.distance(point)
     return (point - distance*self.normal)
-  
+
   def project_ray(self, ray):
     """
     Projects a ray onto the plane.
@@ -188,7 +188,7 @@ def fit_plane_lstsq(XYZ):
   G[:,0] = XYZ[:,0]  #X
   G[:,1] = XYZ[:,1]  #Y
   Z = XYZ[:,2]
-  (a,b,c),resid,rank,s = np.linalg.lstsq(G,Z) 
+  (a,b,c),resid,rank,s = np.linalg.lstsq(G,Z)
   normal = (a,b,-1)
   nn = np.linalg.norm(normal)
   normal = normal / nn
@@ -209,7 +209,7 @@ def fit_plane_optimize(points, seed=None):
   def f_min(X,p):
     normal = p[0:3]
     d = p[3]
-    result = ((normal*X.T).sum(axis=1) + d) / np.linalg.norm(normal) 
+    result = ((normal*X.T).sum(axis=1) + d) / np.linalg.norm(normal)
     return result
   def residuals(params, signal, X):
     return f_min(X, params)
@@ -233,7 +233,7 @@ def fit_plane_solve(XYZ):
   """
   X = XYZ[:,0]
   Y = XYZ[:,1]
-  Z = XYZ[:,2] 
+  Z = XYZ[:,2]
   npts = len(X)
   A = np.array([ [sum(X*X), sum(X*Y), sum(X)],
                  [sum(X*Y), sum(Y*Y), sum(Y)],
@@ -270,14 +270,14 @@ def force_frame_transform(bTa):
   The force vectors obey special transformation rules.
   B{Reference:} Handbook of robotics page 39, equation 2.9
   @type bTa: array, shape (4,4)
-  @param bTa: Homogeneous transformation that represents the position 
+  @param bTa: Homogeneous transformation that represents the position
   and orientation of frame M{A} relative to frame M{B}
   @rtype: array, shape (6,6)
-  @return: The coordinate transformation from M{A} to M{B} for force 
+  @return: The coordinate transformation from M{A} to M{B} for force
   vectors
   """
   aTb = transform_inv(bTa)
-  return motion_frame_transform(aTb).T 
+  return motion_frame_transform(aTb).T
 
 def inertia_matrix_from_vector(i):
   """
@@ -317,10 +317,10 @@ def motion_frame_transform(bTa):
   The motion vectors obey special transformation rules.
   B{Reference:} Handbook of robotics page 39, equation 2.9
   @type bTa: array, shape (4,4)
-  @param bTa: Homogeneous transformation that represents the position 
+  @param bTa: Homogeneous transformation that represents the position
   and orientation of frame M{A} relative to frame M{B}
   @rtype: array, shape (6,6)
-  @return: The coordinate transformation from M{A} to M{B} for motion 
+  @return: The coordinate transformation from M{A} to M{B} for motion
   vectors
   """
   bRa = bTa[:3,:3]
@@ -387,7 +387,7 @@ def rotation_matrix_from_axes(newaxis, oldaxis=Z_AXIS, point=None):
 def skew(v):
   """
   Returns the 3x3 skew matrix.
-  The skew matrix is a square matrix M{A} whose transpose is also its 
+  The skew matrix is a square matrix M{A} whose transpose is also its
   negative; that is, it satisfies the condition M{-A = A^T}.
   @type v: array
   @param v: The input array
@@ -399,11 +399,11 @@ def skew(v):
 
 def transformation_estimation_svd(A, B):
   """
-  This method implements SVD-based estimation of the transformation 
+  This method implements SVD-based estimation of the transformation
   aligning the given correspondences.
-  Estimate a rigid transformation between a source and a target matrices 
+  Estimate a rigid transformation between a source and a target matrices
   using SVD.
-  For further information please check: 
+  For further information please check:
     - U{http://dx.doi.org/10.1109/TPAMI.1987.4767965}
     - U{http://nghiaho.com/?page_id=671}
   @type A: numpy.array
@@ -411,7 +411,7 @@ def transformation_estimation_svd(A, B):
   @type B: numpy.array
   @param B: Points expressed in the reference frame B
   @rtype: R (3x3), t (3x1)
-  @return: (R) rotation matrix and (t) translation vector of the rigid 
+  @return: (R) rotation matrix and (t) translation vector of the rigid
   transformation.
   """
   assert A.shape == B.shape
@@ -456,8 +456,8 @@ def transformation_between_planes(newplane, oldplane):
 def transform_inv(T):
   """
   Calculates the inverse of the input homogeneous transformation.
-  
-  This method is more efficient than using C{numpy.linalg.inv}, given 
+
+  This method is more efficient than using C{numpy.linalg.inv}, given
   the special properties of the homogeneous transformations.
   @type T: array, shape (4,4)
   @param T: The input homogeneous transformation

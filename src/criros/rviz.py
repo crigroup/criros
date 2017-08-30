@@ -5,11 +5,11 @@ import criros.conversions
 # Messages
 from std_msgs.msg import ColorRGBA
 from geometry_msgs.msg import Vector3
-from visualization_msgs.msg import (InteractiveMarker, 
+from visualization_msgs.msg import (InteractiveMarker,
                                       InteractiveMarkerControl, Marker)
 
 
-def create_interactive_6dof(name, color=(1,0,0,1), frame_id='base_link', 
+def create_interactive_6dof(name, color=(1,0,0,1), frame_id='base_link',
                                             transform=None, scale=0.05):
   if transform is None:
     transform = np.eye(4)
@@ -75,7 +75,7 @@ def create_interactive_6dof(name, color=(1,0,0,1), frame_id='base_link',
   int_marker.controls.append(control)
   return int_marker
 
-def create_interactive_mesh(name, resource, color=(1,0,0,1), 
+def create_interactive_mesh(name, resource, color=(1,0,0,1),
                           frame_id='base_link', transform=None, scale=1):
   if transform is None:
     transform = np.eye(4)
@@ -97,7 +97,7 @@ def create_interactive_mesh(name, resource, color=(1,0,0,1),
   int_marker.controls.append( control )
   return int_marker
 
-def create_mesh_marker(mrkid, name, resource, color=(1,0,0,1), 
+def create_mesh_marker(mrkid, name, resource, color=(1,0,0,1),
                   ns='', frame_id='base_link', transform=None, scale=1):
   if transform is None:
     transform = np.eye(4)
@@ -114,7 +114,7 @@ def create_mesh_marker(mrkid, name, resource, color=(1,0,0,1),
   marker.mesh_resource = resource
   return marker
 
-def create_points_marker(mrkid, points, size=1e-3, color=(1,0,0,1), 
+def create_points_marker(mrkid, points, size=1e-3, color=(1,0,0,1),
                           ns='', frame_id='base_link', transform=None):
   if transform is None:
     transform = np.eye(4)
@@ -133,7 +133,7 @@ def create_points_marker(mrkid, points, size=1e-3, color=(1,0,0,1),
     marker.points.append(criros.conversions.to_point(point))
   return marker
 
-def create_text_marker(mrkid, text, size=0.02, color=(1,0,0,1), 
+def create_text_marker(mrkid, text, size=0.02, color=(1,0,0,1),
                             ns='', frame_id='base_link', position=None):
   transform = np.eye(4)
   if position is not None:

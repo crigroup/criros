@@ -23,12 +23,12 @@ class PID:
     self.set_windup(np.ones_like(self.Kp))
     # Reset
     self.reset()
-  
+
   def reset(self):
     self.last_time = time.time()
     self.last_error = np.zeros_like(self.Kp)
     self.integral = np.zeros_like(self.Kp)
-  
+
   def set_gains(self, Kp=None, Ki=None, Kd=None):
     if Kp is not None:
       self.Kp = np.array(Kp)
@@ -36,11 +36,11 @@ class PID:
       self.Ki = np.array(Ki)
     if Kd is not None:
       self.Kd = np.array(Kd)
-  
+
   def set_windup(self, windup):
     self.i_min = -np.array(windup)
     self.i_max = np.array(windup)
-  
+
   def update(self, error, dt=None):
     now = time.time()
     if dt is None:
@@ -71,7 +71,7 @@ class TextColors:
   FAIL = '\033[91m'
   ENDC = '\033[0m'
   log_level = rospy.INFO
-  
+
   def disable(self):
     """
     Resets the coloring.
@@ -82,7 +82,7 @@ class TextColors:
     self.WARNING = ''
     self.FAIL = ''
     self.ENDC = ''
-  
+
   def blue(self, msg):
     """
     Prints a B{blue} color message
@@ -90,7 +90,7 @@ class TextColors:
     @param msg: the message to be printed.
     """
     print(self.OKBLUE + msg + self.ENDC)
-  
+
   def debug(self, msg):
     """
     Prints a B{green} color message
@@ -98,7 +98,7 @@ class TextColors:
     @param msg: the message to be printed.
     """
     print(self.OKGREEN + msg + self.ENDC)
-  
+
   def error(self, msg):
     """
     Prints a B{red} color message
@@ -106,7 +106,7 @@ class TextColors:
     @param msg: the message to be printed.
     """
     print(self.FAIL + msg + self.ENDC)
-  
+
   def ok(self, msg):
     """
     Prints a B{green} color message
@@ -114,7 +114,7 @@ class TextColors:
     @param msg: the message to be printed.
     """
     print(self.OKGREEN + msg + self.ENDC)
-  
+
   def warning(self, msg):
     """
     Prints a B{yellow} color message
@@ -122,57 +122,57 @@ class TextColors:
     @param msg: the message to be printed.
     """
     print(self.WARNING + msg + self.ENDC)
-  
+
   def logdebug(self, msg):
     """
-    Prints message with the word 'Debug' in green at the begging. 
+    Prints message with the word 'Debug' in green at the begging.
     Alternative to C{rospy.logdebug}.
     @type  msg: string
     @param msg: the message to be printed.
     """
     if self.log_level <= rospy.DEBUG:
       print(self.OKGREEN + 'Debug ' + self.ENDC + str(msg))
-    
+
   def loginfo(self, msg):
     """
-    Prints message with the word 'INFO' begging. 
+    Prints message with the word 'INFO' begging.
     Alternative to C{rospy.loginfo}.
     @type  msg: string
     @param msg: the message to be printed.
     """
     if self.log_level <= rospy.INFO:
       print('INFO ' + str(msg))
-  
+
   def logwarn(self, msg):
     """
-    Prints message with the word 'Warning' in yellow at the begging. 
+    Prints message with the word 'Warning' in yellow at the begging.
     Alternative to C{rospy.logwarn}.
     @type  msg: string
     @param msg: the message to be printed.
     """
     if self.log_level <= rospy.WARN:
       print(self.WARNING + 'Warning ' + self.ENDC + str(msg))
-  
+
   def logerr(self, msg):
     """
-    Prints message with the word 'Error' in red at the begging. 
+    Prints message with the word 'Error' in red at the begging.
     Alternative to C{rospy.logerr}.
     @type  msg: string
     @param msg: the message to be printed.
     """
     if self.log_level <= rospy.ERROR:
       print(self.FAIL + 'Error ' + self.ENDC + str(msg))
-  
+
   def logfatal(self, msg):
     """
-    Prints message with the word 'Fatal' in red at the begging. 
+    Prints message with the word 'Fatal' in red at the begging.
     Alternative to C{rospy.logfatal}.
     @type  msg: string
     @param msg: the message to be printed.
     """
     if self.log_level <= rospy.FATAL:
       print(self.FAIL + 'Fatal ' + self.ENDC + str(msg))
-  
+
   def set_log_level(self, level):
     """
     Sets the log level. Possible values are:
@@ -199,7 +199,7 @@ def assert_shape(variable, name, shape):
   @param ttype: expected shape of the np.array
   """
   assert variable.shape == shape, '%s must have a shape %r: %r' % (name, shape, variable.shape)
-  
+
 def assert_type(variable, name, ttype):
   """
   Asserts the type of a variable with a given name
@@ -275,12 +275,12 @@ def read_key(echo=False):
 
 def read_parameter(name, default):
   """
-  Get a parameter from the ROS parameter server. If it's not found, a 
+  Get a parameter from the ROS parameter server. If it's not found, a
   warn is printed.
   @type  name: string
   @param name: Parameter name
   @type  default: Object
-  @param default: Default value for the parameter. The type should be 
+  @param default: Default value for the parameter. The type should be
   the same as the one expected for the parameter.
   @rtype: any
   @return: The resulting parameter
@@ -296,12 +296,12 @@ def read_parameter(name, default):
 
 def read_parameter_err(name):
   """
-  Get a parameter from the ROS parameter server. If it's not found, a 
+  Get a parameter from the ROS parameter server. If it's not found, a
   error is printed.
   @type name: string
   @param name: Parameter name
   @rtype: has_param, param
-  @return: (has_param) True if succeeded, false otherwise. The 
+  @return: (has_param) True if succeeded, false otherwise. The
   parameter is None if C{has_param=False}.
   """
   if rospy.is_shutdown():
@@ -386,7 +386,7 @@ def sorted_joint_state_msg(msg, joint_names):
 
 def unique(data):
   """
-  Finds the unique elements of an array. B{row-wise} and 
+  Finds the unique elements of an array. B{row-wise} and
   returns the sorted unique elements of an array.
   @type  data: np.array
   @param data: Input array.
@@ -397,7 +397,7 @@ def unique(data):
   data = data[order]
   diff = np.diff(data, axis=0)
   ui = np.ones(len(data), 'bool')
-  ui[1:] = (diff != 0).any(axis=1) 
+  ui[1:] = (diff != 0).any(axis=1)
   return data[ui]
 
 def wait_for(predicate, timeout=5.0):

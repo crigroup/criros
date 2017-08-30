@@ -7,9 +7,9 @@ import scipy.signal
 def best_fit_foaw(y, fs, m, d):
   """
   First-Order Adaptive Windowing (FOAW)
-  
+
   Yet another differentiation filter.
-  
+
   @type  y: list
   @param y: the values of the time history of the signal.
   @type  fs: float
@@ -42,9 +42,9 @@ def best_fit_foaw(y, fs, m, d):
 def butter_lowpass(cutoff, fs, order=5):
   """
   Butterworth lowpass digital filter design.
-  
+
   Check C{scipy.signal.butter} for further details.
-  
+
   @type  cutoff: float
   @param cutoff: Cut-off frequency in Hz
   @type  fs: float
@@ -52,24 +52,24 @@ def butter_lowpass(cutoff, fs, order=5):
   @type  order: int
   @param order: The order of the filter.
   @rtype: b, a
-  @return: Numerator (b) and denominator (a) polynomials of the IIR 
+  @return: Numerator (b) and denominator (a) polynomials of the IIR
   filter.
   """
   nyq = 0.5 * fs
   normal_cutoff = cutoff / nyq
   b, a = scipy.signal.butter(order, normal_cutoff, btype='low', analog=False)
-  return b, a  
+  return b, a
 
 def lowpass_fo(cutoff, fs):
   """
   First-order Lowpass digital filter design.
-  
+
   @type  cutoff: float
   @param cutoff: Cut-off frequency in Hz
   @type  fs: float
   @param fs: The sampling frequency (Hz) of the signal to be filtered
   @rtype: b, a
-  @return: Numerator (b) and denominator (a) polynomials of the IIR 
+  @return: Numerator (b) and denominator (a) polynomials of the IIR
   filter.
   """
   import control.matlab
@@ -82,22 +82,22 @@ def lowpass_fo(cutoff, fs):
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
   """
   Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
-  
+
   The Savitzky-Golay filter removes high frequency noise from data.
   It has the advantage of preserving the original shape and
   features of the signal better than other types of filtering
   approaches, such as moving averages techniques.
-  
+
   Notes
   =====
-  The Savitzky-Golay is a type of low-pass filter, particularly suited 
-  for smoothing noisy data. The main idea behind this approach is to 
-  make for each point a least-square fit with a polynomial of high order 
+  The Savitzky-Golay is a type of low-pass filter, particularly suited
+  for smoothing noisy data. The main idea behind this approach is to
+  make for each point a least-square fit with a polynomial of high order
   over a odd-sized window centered at the point.
-  
+
   Example
   =======
-  
+
     >>> import criros
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -111,7 +111,7 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     >>> plt.legend()
     >>> plt.grid(True)
     >>> plt.show()
-  
+
   @type  y: array_like, shape (N,)
   @param y: the values of the time history of the signal.
   @type  window_size: int
@@ -149,25 +149,25 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 
 def smooth_diff(n):
   """
-  A smoothed differentiation filter (digital differentiator). 
+  A smoothed differentiation filter (digital differentiator).
 
   Such a filter has the following advantages:
 
-  First, the filter involves both the smoothing operation and 
-  differentiation operation. It can be regarded as a low-pass 
-  differentiation filter (digital differentiator). 
-  It is well known that the common differentiation operation amplifies 
-  the high-frequency noises. Therefore, the smoothed differentiation 
-  filter would be valuable in experimental (noisy) data processing. 
+  First, the filter involves both the smoothing operation and
+  differentiation operation. It can be regarded as a low-pass
+  differentiation filter (digital differentiator).
+  It is well known that the common differentiation operation amplifies
+  the high-frequency noises. Therefore, the smoothed differentiation
+  filter would be valuable in experimental (noisy) data processing.
 
-  Secondly, the filter coefficients are all convenient integers (simple 
-  units) except for an integer scaling factor, as may be especially 
-  significant in some applications such as those in some single-chip 
+  Secondly, the filter coefficients are all convenient integers (simple
+  units) except for an integer scaling factor, as may be especially
+  significant in some applications such as those in some single-chip
   microcomputers or digital signal processors.
-  
+
   Example
   =======
-  
+
     >>> import math
     >>> import criros
     >>> import scipy.signal
@@ -199,12 +199,12 @@ def smooth_diff(n):
 
   References
   ==========
-    1.  Usui, S.; Amidror, I., I{Digital Low-Pass Differentiation for 
-        Biological Signal-Processing}. IEEE Transactions on Biomedical 
+    1.  Usui, S.; Amidror, I., I{Digital Low-Pass Differentiation for
+        Biological Signal-Processing}. IEEE Transactions on Biomedical
         Engineering 1982, 29, (10), 686-693.
-    2.  Luo, J. W.; Bai, J.; He, P.; Ying, K., I{Axial strain calculation 
-        using a low-pass digital differentiator in ultrasound 
-        elastography}. IEEE Transactions on Ultrasonics Ferroelectrics 
+    2.  Luo, J. W.; Bai, J.; He, P.; Ying, K., I{Axial strain calculation
+        using a low-pass digital differentiator in ultrasound
+        elastography}. IEEE Transactions on Ultrasonics Ferroelectrics
         and Frequency Control 2004, 51, (9), 1119-1127.
   @type  n: int
   @param n: filter length (positive integer larger no less than 2)
@@ -225,13 +225,13 @@ def smooth_diff(n):
 class ButterLowPass:
   """
   Butterworth lowpass digital filter design.
-  
+
   Check C{scipy.signal.butter} for further details.
   """
   def __init__( self, cutoff, fs, order=5 ):
     """
     C{ButterLowPass} constructor
-  
+
     @type  cutoff: float
     @param cutoff: Cut-off frequency in Hz
     @type  fs: float
@@ -245,10 +245,10 @@ class ButterLowPass:
 
   def __call__( self, x ):
     """
-    Filters the input array across its C{axis=0} (each column is 
-    considered as an independent signal). Uses initial conditions (C{zi}) 
+    Filters the input array across its C{axis=0} (each column is
+    considered as an independent signal). Uses initial conditions (C{zi})
     for the filter delays.
-    
+
     @type x: array
     @param x: An N-dimensional input array.
     @rtype: array
@@ -270,7 +270,7 @@ class LowPassFO:
   def __init__( self, cutoff, fs):
     """
     C{LowPassFO} constructor
-  
+
     @type  cutoff: float
     @param cutoff: Cut-off frequency in Hz
     @type  fs: float
@@ -282,10 +282,10 @@ class LowPassFO:
 
   def __call__( self, x ):
     """
-    Filters the input array across its C{axis=0} (each column is 
-    considered as an independent signal). Uses initial conditions (C{zi}) 
+    Filters the input array across its C{axis=0} (each column is
+    considered as an independent signal). Uses initial conditions (C{zi})
     for the filter delays.
-    
+
     @type x: array
     @param x: An N-dimensional input array.
     @rtype: array

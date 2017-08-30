@@ -24,20 +24,20 @@ class Hole(object):
     self.position = np.array(position)
     self.direction = tr.unit_vector(direction)
     self.depth = abs(depth)
-    
+
   def __repr__(self):
     printoptions = np.get_printoptions()
     np.set_printoptions(precision=4, suppress=True)
     text = '<Hole(pos: {0} dir: {1} depth: {2})>'.format(self.position, self.direction, self.depth)
     np.set_printoptions(**printoptions)
     return text
-  
+
   def __str__(self):
     return self.__repr__()
-  
+
   def get_ray(self):
     return orpy.Ray(self.position, self.direction)
-  
+
   def transform(self, T):
     ray = self.get_ray()
     Thole = criros.conversions.from_ray(ray)
@@ -170,7 +170,7 @@ def find_body_holes(body, radius, absolute=True):
       body_holes[str(link.GetName())] = link_holes
   return body_holes
 
-def find_mesh_holes(vert, faces, radius, scale=1., fitplane_eps=1e-8, 
+def find_mesh_holes(vert, faces, radius, scale=1., fitplane_eps=1e-8,
                                                   fitplane_attempts=10):
   vertices = np.array(vert)*scale
   # Circles have lots of vertices. Use clustering to locate them
@@ -266,7 +266,7 @@ def get_enabled_bodies(env):
 
 def get_robot_iktypes(robot):
   """
-  Returns a dict with the manipulator:[iktypes] pairs of available iksolvers . 
+  Returns a dict with the manipulator:[iktypes] pairs of available iksolvers .
   @type  refbody: orpy.Robot
   @param refbody: The OpenRAVE robot
   @rtype: orpy.Environment
@@ -364,7 +364,7 @@ def random_joint_positions(robot):
   @type  robot: orpy.Robot
   @param robot: The OpenRAVE robot
   @rtype: np.array
-  @return: 
+  @return:
   """
   # Get the limits of the active DOFs
   lower, upper = robot.GetActiveDOFLimits()
@@ -380,7 +380,7 @@ def remove_bodies(env, remove=None, keep=None):
   @type  remove: list
   @param remove: list of objects to remove
   @type  keep: list
-  @param keep: list of objects to keep 
+  @param keep: list of objects to keep
   """
   # Check that one of the lists is None
   if (remove is None) and (type(keep) is list):
@@ -402,7 +402,7 @@ def remove_bodies(env, remove=None, keep=None):
 
 def remove_body_padding(body):
   """
-  Restores the collision meshes of the body. The original collision 
+  Restores the collision meshes of the body. The original collision
   meshes are store as C{UserData} by the C{set_body_padding} function.
   @type  body: orpy.KinBody
   @param body: The OpenRAVE body
@@ -425,17 +425,17 @@ def remove_body_padding(body):
 
 def set_body_padding(body, padding, generate=False, links=[]):
   """
-  Sets the padding for the specified links. If C{links} is empty, 
+  Sets the padding for the specified links. If C{links} is empty,
   the padding will be done for ALL the links.
   @type  body: orpy.KinBody
   @param body: The OpenRAVE body
   @type  padding: float
   @param padding: The padding value.
   @type  generate: bool
-  @param generate: If set, the ConvexDecompositionModel will be 
+  @param generate: If set, the ConvexDecompositionModel will be
   generated if it doesn't exist already.
   @type  links: list
-  @param links: The list of links to be padded. If it is empty, 
+  @param links: The list of links to be padded. If it is empty,
   the padding will be done for ALL the links.
   @rtype: bool
   @return: True if succeeded, False otherwise
