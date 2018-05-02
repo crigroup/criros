@@ -58,7 +58,7 @@ def random_lookat_ray(goal, radius, variance, fov):
   direction = tr.unit_vector(direction)
   return orpy.Ray(point, direction)
 
-def random_point_inside_fov(camera_info, maxdist, mindist, Tcamera=np.eye(4)):
+def random_point_inside_fov(camera_info, maxdist, mindist=0, Tcamera=np.eye(4)):
   """
   Generates a random XYZ point inside the camera field of view
   @type  camera_info: sensor_msgs.CameraInfo
