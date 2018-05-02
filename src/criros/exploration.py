@@ -58,13 +58,15 @@ def random_lookat_ray(goal, radius, variance, fov):
   direction = tr.unit_vector(direction)
   return orpy.Ray(point, direction)
 
-def random_point_inside_fov(camera_info, maxdist, Tcamera=np.eye(4)):
+def random_point_inside_fov(camera_info, maxdist, mindist, Tcamera=np.eye(4)):
   """
   Generates a random XYZ point inside the camera field of view
   @type  camera_info: sensor_msgs.CameraInfo
   @param camera_info: Message with the meta information for a camera
   @type  maxdist:     float
   @param maxdist:     distance from the camera ref frame in the z direction
+  @type  mindist:     float
+  @param mindist:     distance from the camera ref frame in the z direction
   @type  Tcamera:     np.array
   @param Tcamera:     homogeneous transformation for the camera ref frame
   @rtype: array
@@ -72,7 +74,7 @@ def random_point_inside_fov(camera_info, maxdist, Tcamera=np.eye(4)):
   """
   cam_model = PinholeCameraModel()
   cam_model.fromCameraInfo(camera_info)
-  z = maxdist*np.random.random()
+  z = np.random.uniform(mindist,maxdist)
   delta_x = cam_model.getDeltaX(cam_model.width/2, z)
   delta_y = cam_model.getDeltaY(cam_model.height/2, z)
   point = np.array([0, 0, z, 1])
