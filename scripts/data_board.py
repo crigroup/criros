@@ -4,6 +4,8 @@
 Users interact with this program by writing a ROS configuration file,
 loaded to ROS parameter server.
 
+The script can work with any kind of numerical data from ROS topics.
+
 """
 import rospy
 
