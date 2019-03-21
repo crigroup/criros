@@ -2,6 +2,9 @@ import rospy
 import numpy as np
 from rospy_message_converter import message_converter
 import re
+import logging
+
+logger = logging.getLogger("criros.databoard")
 
 
 class DataCollector(object):
@@ -56,6 +59,7 @@ class DataCollector(object):
         else:
             for i in range(self._nb_data_points):
                 data[self._nb_data_points - i - 1] = extract_func(self._raw_msgs[self._current_index - i - 1])
+        # logger.debug("data: %s", data)
         return data
 
     def get_time(self):
@@ -66,6 +70,7 @@ class DataCollector(object):
         else:
             for i in range(self._nb_data_points):
                 times[self._nb_data_points - i - 1] = self._recv_times[self._current_index - i - 1]
+        # logger.debug("time: %s", times)
         return times
 
     @staticmethod
