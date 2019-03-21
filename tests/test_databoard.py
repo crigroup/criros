@@ -5,6 +5,7 @@ import yaml
 import numpy as np
 import std_msgs.msg
 import sensor_msgs.msg
+import subprocess
 
 
 def publish_fake_data(topics, datapoints=250, rate=100):
@@ -43,7 +44,11 @@ def publish_fake_data(topics, datapoints=250, rate=100):
 
 @pytest.fixture(autouse=True)
 def rospy_setup():
+    roscore_process = subprocess.Popen("roscore")
     rospy.init_node("test_databoard")
+    yield
+    roscore_process.terminate()
+    roscore_process.wait()
 
 
 @pytest.fixture
@@ -94,26 +99,25 @@ def test_data_collector_has_msg(topic_data):
         assert collector_dict[topic].has_new_data, "No data received"
 
 
-def test_data_collector_retreive_msg(topic_data):
-    "Retrieve messages correctly."
+def test_retrieve_msg_overflow(topic_data):
+    "If more data points are received than total nb of data points, treat overflow correctly."
     param = topic_data
     # setup parameters
     rospy.set_param("/", param)
     topics = rospy.get_param('/data_board/topics')
     collector_dict = {}
+    nb_store_pts = rospy.get_param("/data_board/number_store_points")
     for topic in topics:
         collector_dict[topic] = criros.databoard.DataCollector(
             topic, topics[topic]["type"],
-            rospy.get_param("/data_board/number_store_points"))
+            nb_store_pts)
 
-    rospy.sleep(0.5)
     fake_data = publish_fake_data(topics, datapoints=250, rate=125)  # publish fake data in 2 seconds.
-    rospy.sleep(0.5)
 
     # test
     for topic in collector_dict:
-        assert len(collector_dict[topic]._raw_msgs) == 200
-        assert len(collector_dict[topic]._recv_times) == 200
+        assert len(collector_dict[topic]._raw_msgs) == nb_store_pts
+        assert len(collector_dict[topic]._recv_times) == nb_store_pts
 
     # valid data points
     np.testing.assert_allclose(fake_data['/topic_float64'][-200:],
@@ -121,13 +125,60 @@ def test_data_collector_retreive_msg(topic_data):
 
     for i in range(6):
         np.testing.assert_allclose(
-            fake_data['/topic_joint_states'][-200:],
-            collector_dict['/topic_joint_states'].get_data("position[0]"))
+            fake_data['/topic_joint_states'][i, -200:],
+            collector_dict['/topic_joint_states'].get_data("position[%d]" % i))
 
 
-def test_data_collector_monotonic_time(topic_data):
+def test_retrieve_data_underflow(topic_data):
+    "If less data points are received than total nb of data points, treat underflow correctly."
+    param = topic_data
+    # setup parameters
+    rospy.set_param("/", param)
+    topics = rospy.get_param('/data_board/topics')
+    collector_dict = {}
+    nb_store_pts = rospy.get_param("/data_board/number_store_points")
+    for topic in topics:
+        collector_dict[topic] = criros.databoard.DataCollector(
+            topic, topics[topic]["type"], nb_store_pts)
+
+    fake_data = publish_fake_data(topics, datapoints=100, rate=125)  # publish fake data in 2 seconds.
+
+    # test
+    for topic in collector_dict:
+        assert len(collector_dict[topic]._raw_msgs) == 100
+        assert len(collector_dict[topic]._recv_times) == 100
+
+    # valid data points
+    np.testing.assert_allclose(fake_data['/topic_float64'][-50:],
+                               collector_dict['/topic_float64'].get_data("data")[-50:])
+
+    for i in range(6):
+        np.testing.assert_allclose(
+            fake_data['/topic_joint_states'][i, -50:],
+            collector_dict['/topic_joint_states'].get_data("position[%d]" % i)[-50:])
+
+
+@pytest.mark.parametrize("datapoints", [100, 200, 400])
+def test_data_collector_monotonic_time(topic_data, datapoints):
     "Collected data should have monotonically increasing time."
+    param = topic_data
+    # setup parameters
+    rospy.set_param("/", param)
+    topics = rospy.get_param('/data_board/topics')
+    collector_dict = {}
+    nb_store_pts = rospy.get_param("/data_board/number_store_points")
+    for topic in topics:
+        collector_dict[topic] = criros.databoard.DataCollector(
+            topic, topics[topic]["type"], nb_store_pts)
 
+    publish_fake_data(topics, datapoints=datapoints, rate=125)  # publish fake data in 2 seconds.
 
-def test_data_collector_overflow(topic_data):
-    "If more data points are received than total nb of data points, treat overflow correctly."
+    # monotonically increasing time with low variance
+    for topic in topics:
+        t_vec = collector_dict[topic].get_time()
+        td_vec = np.diff(t_vec)
+        assert np.all(td_vec > 0)
+        assert np.max(td_vec) < 0.012
+        assert np.min(td_vec) > 0.006
+        np.testing.assert_almost_equal(np.mean(td_vec), 0.008, decimal=1)
+

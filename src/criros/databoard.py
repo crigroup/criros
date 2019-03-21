@@ -1,4 +1,7 @@
 import rospy
+import numpy as np
+from rospy_message_converter import message_converter
+import re
 
 
 class DataCollector(object):
@@ -38,8 +41,46 @@ class DataCollector(object):
         else:
             self._raw_msgs[self._current_index] = msg
             self._recv_times[self._current_index] = rospy.get_time()
-            self._current_index = (self._current_index + 1) % self._nb_data_points
-            self._total_index += 1
+        self._current_index = (self._current_index + 1) % self._nb_data_points
+        self._total_index += 1
         self.has_new_data = True
+
+    def get_data(self, select_string):
+        # type: (str) -> np.ndarray
+        """Get data with select_string."""
+        data = np.zeros(len(self._raw_msgs))
+        extract_func = DataCollector.construct_extract_func(self._topic_type, select_string)
+        if self._total_index < self._nb_data_points:
+            for i in range(self._total_index):
+                data[i] = extract_func(self._raw_msgs[i])
+        else:
+            for i in range(self._nb_data_points):
+                data[self._nb_data_points - i - 1] = extract_func(self._raw_msgs[self._current_index - i - 1])
+        return data
+
+    def get_time(self):
+        """Get time associated with data points."""
+        times = np.array(self._recv_times)
+        if self._total_index < self._nb_data_points:
+            pass
+        else:
+            for i in range(self._nb_data_points):
+                times[self._nb_data_points - i - 1] = self._recv_times[self._current_index - i - 1]
+        return times
+
+    @staticmethod
+    def construct_extract_func(topic_type, select_string):
+        """Return a function to extract data from a message."""
+        if topic_type == "std_msgs/Float64":
+            func = lambda msg: msg.data
+        elif topic_type == "sensor_msgs/JointState":
+            match = re.match('(.*)\[([0-9])\]', select_string)
+            field = match.group(1)
+            index = int(match.group(2))
+            func = lambda msg: message_converter.convert_ros_message_to_dictionary(msg)[field][index]
+        else:
+            raise RuntimeError("Unknown topic type: [%s]" % topic_type)
+        return func
+
 
 
