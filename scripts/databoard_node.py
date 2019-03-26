@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # subscribe to topic and do stuff
     data_collector_dict = {}
     for topic in topics:
-        data_collector_dict[topic] = DataCollector(topic, topics[topic]["type"], 1000)
+        data_collector_dict[topic] = DataCollector(topic, topics[topic]["type"], number_store_points)
 
     # Create figure for plotting
     fig, axs = plt.subplots(layout[0], layout[1], sharex=sharex)

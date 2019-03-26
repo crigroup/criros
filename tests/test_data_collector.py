@@ -147,22 +147,22 @@ def test_retrieve_msg_overflow(topic_data):
 
     # valid data points
     np.testing.assert_allclose(fake_data['/topic_float64'][-200:],
-                               collector_dict['/topic_float64'].get_data("data"))
+                               collector_dict['/topic_float64'].get_data("data")[1])
 
     for i in range(6):
         np.testing.assert_allclose(
             fake_data['/topic_joint_states'][i, -200:],
-            collector_dict['/topic_joint_states'].get_data("position[%d]" % i))
+            collector_dict['/topic_joint_states'].get_data("position[%d]" % i)[1])
 
     np.testing.assert_allclose(fake_data['/topic_wrenches'][-200:, 0],
-                               collector_dict['/topic_wrenches'].get_data("force.x"))
+                               collector_dict['/topic_wrenches'].get_data("force.x")[1])
     np.testing.assert_allclose(fake_data['/topic_wrenches'][-200:, 3],
-                               collector_dict['/topic_wrenches'].get_data("torque.x"))
+                               collector_dict['/topic_wrenches'].get_data("torque.x")[1])
 
     np.testing.assert_allclose(fake_data['/topic_wrench_stamped'][-200:, 0],
-                               collector_dict['/topic_wrench_stamped'].get_data("wrench.force.x"))
+                               collector_dict['/topic_wrench_stamped'].get_data("wrench.force.x")[1])
     np.testing.assert_allclose(fake_data['/topic_wrench_stamped'][-200:, 3],
-                               collector_dict['/topic_wrench_stamped'].get_data("wrench.torque.x"))
+                               collector_dict['/topic_wrench_stamped'].get_data("wrench.torque.x")[1])
 
 def test_retrieve_data_underflow(topic_data):
     "If less data points are received than total nb of data points, treat underflow correctly."
@@ -185,17 +185,17 @@ def test_retrieve_data_underflow(topic_data):
 
     # valid data points
     np.testing.assert_allclose(fake_data['/topic_float64'][-50:],
-                               collector_dict['/topic_float64'].get_data("data")[-50:])
+                               collector_dict['/topic_float64'].get_data("data")[1][-50:])
 
     for i in range(6):
         np.testing.assert_allclose(
             fake_data['/topic_joint_states'][i, -50:],
-            collector_dict['/topic_joint_states'].get_data("position[%d]" % i)[-50:])
+            collector_dict['/topic_joint_states'].get_data("position[%d]" % i)[1][-50:])
 
     np.testing.assert_allclose(fake_data['/topic_wrenches'][-200:, 0],
-                               collector_dict['/topic_wrenches'].get_data("force.x"))
+                               collector_dict['/topic_wrenches'].get_data("force.x")[1])
     np.testing.assert_allclose(fake_data['/topic_wrenches'][-200:, 3],
-                               collector_dict['/topic_wrenches'].get_data("torque.x"))
+                               collector_dict['/topic_wrenches'].get_data("torque.x")[1])
 
 
 @pytest.mark.parametrize("datapoints", [100, 200, 400])
@@ -215,7 +215,7 @@ def test_data_collector_monotonic_time(topic_data, datapoints):
 
     # monotonically increasing time with low variance
     for topic in topics:
-        t_vec = collector_dict[topic].get_time()
+        t_vec = collector_dict[topic].get_data()[0]
         td_vec = np.diff(t_vec)
         assert np.all(td_vec > 0)
         assert np.max(td_vec) < 0.012

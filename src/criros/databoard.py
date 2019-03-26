@@ -54,21 +54,32 @@ class DataCollector(object):
         self._total_index += 1
         self.has_new_data = True
 
-    def get_data(self, select_string):
-        # type: (str) -> np.ndarray
-        """Get data with select_string."""
+    def get_data(self, select_string=""):
+        # type: (str) -> (np.ndarray, np.ndarray)
+        """Get data with select_string.
+
+        Args:
+            select_string: Selection string.
+
+        Returns:
+            A tuple of times and data points.
+
+        """
         _total_index_local = int(self._total_index)
         data = np.zeros(self._nb_data_points)
+        times = np.zeros(self._nb_data_points)
         extract_func = DataCollector.construct_extract_func(self._topic_type, select_string)
         if _total_index_local < self._nb_data_points:
             for i in range(_total_index_local):
                 data[i] = extract_func(self._raw_msgs[i])
+            times = self._recv_times[:_total_index_local]
             data = data[:_total_index_local]
         else:
             for i in range(self._nb_data_points):
                 data[self._nb_data_points - i - 1] = extract_func(self._raw_msgs[self._current_index - i - 1])
+                times[self._nb_data_points - i - 1] = self._recv_times[self._current_index - i - 1]
         # logger.debug("data: %s", data)
-        return data
+        return times, data
 
     def get_time(self):
         """Get time associated with data points."""
@@ -84,6 +95,8 @@ class DataCollector(object):
     @staticmethod
     def construct_extract_func(topic_type, select_string):
         """Return a function to extract data from a message."""
+        if select_string == "":
+            return lambda msg: np.nan
         if topic_type == "std_msgs/Float64":
             func = lambda msg: msg.data
         elif topic_type in ["sensor_msgs/JointState", 'geometry_msgs/Wrench', 'geometry_msgs/WrenchStamped']:
