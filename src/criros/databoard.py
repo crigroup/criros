@@ -1,7 +1,7 @@
 import rospy
 import numpy as np
 from rospy_message_converter import message_converter
-import re
+import regex as re
 import logging
 
 logger = logging.getLogger("criros.databoard")
@@ -25,6 +25,12 @@ class DataCollector(object):
         elif topic_type == "sensor_msgs/JointState":
             from sensor_msgs.msg import JointState
             _type = JointState
+        elif topic_type == 'geometry_msgs/Wrench':
+            from geometry_msgs.msg import Wrench
+            _type = Wrench
+        elif topic_type == 'geometry_msgs/WrenchStamped':
+            from geometry_msgs.msg import WrenchStamped
+            _type = WrenchStamped
         else:
             raise RuntimeError("Unknown topic type %s" % topic_type)
         self._topic_type = topic_type
@@ -51,11 +57,13 @@ class DataCollector(object):
     def get_data(self, select_string):
         # type: (str) -> np.ndarray
         """Get data with select_string."""
-        data = np.zeros(len(self._raw_msgs))
+        _total_index_local = int(self._total_index)
+        data = np.zeros(self._nb_data_points)
         extract_func = DataCollector.construct_extract_func(self._topic_type, select_string)
-        if self._total_index < self._nb_data_points:
-            for i in range(self._total_index):
+        if _total_index_local < self._nb_data_points:
+            for i in range(_total_index_local):
                 data[i] = extract_func(self._raw_msgs[i])
+            data = data[:_total_index_local]
         else:
             for i in range(self._nb_data_points):
                 data[self._nb_data_points - i - 1] = extract_func(self._raw_msgs[self._current_index - i - 1])
@@ -78,11 +86,24 @@ class DataCollector(object):
         """Return a function to extract data from a message."""
         if topic_type == "std_msgs/Float64":
             func = lambda msg: msg.data
-        elif topic_type == "sensor_msgs/JointState":
-            match = re.match('(.*)\[([0-9])\]', select_string)
-            field = match.group(1)
-            index = int(match.group(2))
-            func = lambda msg: message_converter.convert_ros_message_to_dictionary(msg)[field][index]
+        elif topic_type in ["sensor_msgs/JointState", 'geometry_msgs/Wrench', 'geometry_msgs/WrenchStamped']:
+            # input: `some_file[x]`; output: msg.some_field[x]
+            match = re.match('([a-z]*)(\.[a-z]*)*(\[([0-9])\])?', select_string)
+            if match is None:
+                raise RuntimeError("Fail to capture regex for string: %s" % select_string)
+            field_base = match.group(1)
+            fields_other = [s[1:] for s in match.captures(2)]
+            if len(match.captures(4)) != 0:
+                index = int(match.group(4))
+            else:
+                index = None
+            def func(msg):
+                data = message_converter.convert_ros_message_to_dictionary(msg)[field_base]
+                for field in fields_other:
+                    data = data[field]
+                if index is not None:
+                    data = data[index]
+                return data
         else:
             raise RuntimeError("Unknown topic type: [%s]" % topic_type)
         return func

@@ -7,10 +7,10 @@ loaded to ROS parameter server.
 The script can work with any kind of numerical data from ROS topics.
 
 """
-import logging
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import rospy
+import logging
 import numpy as np
 from criros.databoard import DataCollector
 
