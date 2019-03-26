@@ -71,6 +71,18 @@ data_board:
         - [0, "position[0]"]
         - [1, "position[2]"]
 
+    "/topic_wrenches":
+      type: geometric_msgs/Wrench
+      plot_handles:
+        - [0, "force.x"]
+        - [1, "torque.y"]
+
+    "/topic_wrenche_stampeds":
+      type: geometric_msgs/WrenchStamped
+      plot_handles:
+        - [0, "wrench.force.x"]
+        - [1, "wrench.torque.y"]
+
   axes_configs:
     sharex: True
     yranges:
