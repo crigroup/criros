@@ -69,8 +69,9 @@ if __name__ == '__main__':
     def animate(i, xleft):
         for topic in topics:
             for i, (ax_index, select_cmd) in enumerate(topics[topic]['plot_handles']):
-                xdata = data_collector_dict[topic].get_time() - t_zero
-                ydata = data_collector_dict[topic].get_data(select_cmd)
+                xdata, ydata = data_collector_dict[topic].get_data(select_cmd)
+                xdata = xdata - t_zero
+                print(xdata[0], xdata[-1])
 
                 topics[topic]["lines"][i].set_xdata(xdata)
                 topics[topic]["lines"][i].set_ydata(ydata)
@@ -81,11 +82,12 @@ if __name__ == '__main__':
                 except IndexError as e:
                     logger.warn("Exception msg: %s", e.message)
                     logger.warn("xdata: %s. topic: %s. select cmd: %s", xdata, topic, select_cmd)
-        axs[ax_index].set_xlim(xleft, xleft + time_window_sec)
+
+        axs[0].set_xlim(xleft, xleft + time_window_sec)
         return lines
 
     # Set up plot to call animate() function periodically
-    ani = animation.FuncAnimation(fig,
-                                  animate,
-                                  interval=250, blit=False, fargs=(xleft,))
+    # note: blit must be false otherwise the figure won't update its axes properly
+    ani = animation.FuncAnimation(fig, animate,
+                                  interval=100, blit=False, fargs=(xleft,))
     plt.show()

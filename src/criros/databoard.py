@@ -72,14 +72,14 @@ class DataCollector(object):
         if _total_index_local < self._nb_data_points:
             for i in range(_total_index_local):
                 data[i] = extract_func(self._raw_msgs[i])
-            times = self._recv_times[:_total_index_local]
+            times = np.array(self._recv_times[:_total_index_local])
             data = data[:_total_index_local]
         else:
             for i in range(self._nb_data_points):
                 data[self._nb_data_points - i - 1] = extract_func(self._raw_msgs[self._current_index - i - 1])
                 times[self._nb_data_points - i - 1] = self._recv_times[self._current_index - i - 1]
         # logger.debug("data: %s", data)
-        return times, data
+        return np.array(times), np.array(data)
 
     def get_time(self):
         """Get time associated with data points."""
