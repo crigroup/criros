@@ -196,7 +196,7 @@ def find_mesh_holes(vert, faces, radius, scale=1., fitplane_eps=1e-8,
     circles_info.append(data)
     if fit_error > fitplane_eps:
       # Report circles that weren't fitted properly
-      print 'Circle planefit error above threshold: {0}'.format(fit_error)
+      print('Circle planefit error above threshold: {0}'.format(fit_error))
   # One hole is composed by two circles, pair them
   holes = []
   num_circles = len(circles_info)
@@ -353,7 +353,7 @@ def move_out_of_collision(env, body, max_displacement=0.005):
     Tnew[:3,3] = Tbody[:3,3] + push_distance*push_direction
     body.SetTransform(Tnew)
     if push_distance > max_displacement:
-      print 'push_distance: {0}'.format(push_distance)
+      print('push_distance: {0}'.format(push_distance))
       body.SetTransform(Tbody)
       return False
   return True
